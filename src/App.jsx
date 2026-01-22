@@ -1,6 +1,7 @@
 import TabBar from './components/TabBar'
 import SetupPage from './components/SetupPage'
 import GamePage from './components/GamePage'
+import TopicsPage from './components/TopicsPage'
 import useGameState from './hooks/useGameState'
 
 function App() {
@@ -25,11 +26,9 @@ function App() {
         </div>
 
         {/* 內容區域 */}
-        {gameState.currentTab === 'setup' ? (
-          <SetupPage gameState={gameState} />
-        ) : (
-          <GamePage gameState={gameState} />
-        )}
+        {gameState.currentTab === 'setup' && <SetupPage gameState={gameState} />}
+        {gameState.currentTab === 'game' && <GamePage gameState={gameState} />}
+        {gameState.currentTab === 'topics' && <TopicsPage gameState={gameState} />}
       </div>
     </div>
   )
