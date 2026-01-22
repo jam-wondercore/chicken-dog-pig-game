@@ -10,6 +10,7 @@ function TopicsPage({ gameState }) {
     renameTopic,
     batchAddImagesToTopic,
     deleteImageFromTopic,
+    getTopicImages,
   } = gameState
 
   const fileInputRef = useRef(null)
@@ -203,7 +204,7 @@ function TopicsPage({ gameState }) {
                             isExpanded ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
                           }`}
                         >
-                          {topic.images.length} 張
+                          {(topic.imageIds || []).length} 張
                         </div>
                       </>
                     )}
@@ -249,7 +250,7 @@ function TopicsPage({ gameState }) {
                 {/* Topic Images - 展開時顯示 */}
                 {isExpanded && (
                   <div className="p-4 bg-white/50">
-                    {topic.images.length === 0 ? (
+                    {(topic.imageIds || []).length === 0 ? (
                       <div className="text-center py-8">
                         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
                           <span className="text-2xl">🖼️</span>
@@ -258,16 +259,22 @@ function TopicsPage({ gameState }) {
                       </div>
                     ) : (
                       <div className="grid grid-cols-4 gap-3">
-                        {topic.images.map((image, index) => (
+                        {getTopicImages(topic.id).map((image, index) => (
                           <div
-                            key={`${topic.id}-${index}-${image.substring(0, 50)}`}
+                            key={`${topic.id}-${index}`}
                             className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer border-2 border-gray-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                           >
-                            <img
-                              src={image}
-                              alt={`圖片 ${index + 1}`}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            />
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={`圖片 ${index + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">載入中</span>
+                              </div>
+                            )}
                             {/* 刪除按鈕 */}
                             <button
                               onClick={(e) => {

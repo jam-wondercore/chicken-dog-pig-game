@@ -21,6 +21,7 @@ function GamePage({ gameState }) {
     pauseGame,
     resumeGame,
     backToSetup,
+    getGroupImages,
   } = gameState
 
   // 遊戲完成狀態
@@ -208,6 +209,7 @@ function GamePage({ gameState }) {
   }
 
   const currentGroup = groups[currentGroupIndex]
+  const currentGroupImages = getGroupImages(currentGroup?.id)
 
   // 判斷是否處於前奏階段
   const isInIntro = playState === 'playing' && !showGrid
@@ -218,7 +220,7 @@ function GamePage({ gameState }) {
       <div className="mb-6">
         {showGrid ? (
           <ImageGrid
-            images={currentGroup.images}
+            images={currentGroupImages}
             activeIndex={currentBeatIndex}
             mode="game"
           />

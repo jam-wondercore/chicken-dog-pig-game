@@ -15,6 +15,7 @@ function SetupPage({ gameState }) {
     shuffleGroup,
     shuffleAllGroups,
     reorderGroups,
+    getGroupImages,
   } = gameState
 
   const [showTopicPicker, setShowTopicPicker] = useState(false)
@@ -72,14 +73,14 @@ function SetupPage({ gameState }) {
   const handleSingleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (file && currentEditIndex.current !== null) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        updateGroupImage(currentGroupId, currentEditIndex.current, event.target.result)
-      }
-      reader.readAsDataURL(file)
+      // 直接傳 File 對象，讓 useGameState 統一處理壓縮和儲存
+      updateGroupImage(currentGroupId, currentEditIndex.current, file)
     }
     e.target.value = ''
   }
+
+  // 取得當前組別的圖片 base64（用於顯示）
+  const currentGroupImages = getGroupImages(currentGroupId)
 
   return (
     <div className="max-w-[520px] mx-auto px-4">
@@ -165,7 +166,7 @@ function SetupPage({ gameState }) {
       {/* 圖片網格 */}
       <div className="mb-6">
         <ImageGrid
-          images={currentGroup.images}
+          images={currentGroupImages}
           onImageClick={handleSingleUpload}
           mode="setup"
         />
@@ -229,32 +230,35 @@ function SetupPage({ gameState }) {
                 將從選擇的主題中隨機匯入 8 張圖片到目前的組別
               </p>
               <div className="flex flex-col gap-2">
-                {topics.map((topic) => (
-                  <button
-                    key={topic.id}
-                    onClick={() => {
-                      importFromTopic(currentGroupId, topic.id)
-                      setShowTopicPicker(false)
-                    }}
-                    disabled={topic.images.length === 0}
-                    className={`p-4 rounded-xl text-left transition-all duration-300 ${
-                      topic.images.length === 0
-                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                        : 'bg-white hover:bg-indigo-50 hover:shadow-md border border-gray-100 hover:border-indigo-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">{topic.name}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        topic.images.length === 0
-                          ? 'bg-gray-100 text-gray-400'
-                          : 'bg-indigo-100 text-indigo-600'
-                      }`}>
-                        {topic.images.length} 張
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                {topics.map((topic) => {
+                  const imageCount = (topic.imageIds || []).length
+                  return (
+                    <button
+                      key={topic.id}
+                      onClick={() => {
+                        importFromTopic(currentGroupId, topic.id)
+                        setShowTopicPicker(false)
+                      }}
+                      disabled={imageCount === 0}
+                      className={`p-4 rounded-xl text-left transition-all duration-300 ${
+                        imageCount === 0
+                          ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                          : 'bg-white hover:bg-indigo-50 hover:shadow-md border border-gray-100 hover:border-indigo-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{topic.name}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          imageCount === 0
+                            ? 'bg-gray-100 text-gray-400'
+                            : 'bg-indigo-100 text-indigo-600'
+                        }`}>
+                          {imageCount} 張
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
               {topics.length === 0 && (
                 <div className="text-center py-8 text-gray-400">
