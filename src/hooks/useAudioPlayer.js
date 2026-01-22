@@ -1,11 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-
-// 音樂檔案路徑
-const AUDIO_FILES = {
-  start: '/start.mp3',   // 開始前奏
-  round: '/round.mp3',   // 每組循環播放
-  end: '/end.mp3',       // 遊戲結束
-}
+import { AUDIO_FILES, AUDIO_SETTINGS, GAME_STATES } from '../constants'
 
 // 預載入音樂並等待可播放
 const preloadAudio = (audio) => {
@@ -29,7 +23,7 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
   // 雙緩衝 round 音樂，實現無縫循環
   const roundAudioARef = useRef(null)
   const roundAudioBRef = useRef(null)
-  const currentRoundRef = useRef('A') // 當前播放的是 A 還是 B
+  const currentRoundRef = useRef('A')
 
   // 更新 gameState ref
   useEffect(() => {
@@ -39,23 +33,22 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
   // 初始化並預載入所有音樂
   useEffect(() => {
     if (!startAudioRef.current) {
-      startAudioRef.current = new Audio(AUDIO_FILES.start)
+      startAudioRef.current = new Audio(AUDIO_FILES.START)
       startAudioRef.current.loop = false
       startAudioRef.current.preload = 'auto'
     }
-    // 雙緩衝 round 音樂
     if (!roundAudioARef.current) {
-      roundAudioARef.current = new Audio(AUDIO_FILES.round)
+      roundAudioARef.current = new Audio(AUDIO_FILES.ROUND)
       roundAudioARef.current.loop = false
       roundAudioARef.current.preload = 'auto'
     }
     if (!roundAudioBRef.current) {
-      roundAudioBRef.current = new Audio(AUDIO_FILES.round)
+      roundAudioBRef.current = new Audio(AUDIO_FILES.ROUND)
       roundAudioBRef.current.loop = false
       roundAudioBRef.current.preload = 'auto'
     }
     if (!endAudioRef.current) {
-      endAudioRef.current = new Audio(AUDIO_FILES.end)
+      endAudioRef.current = new Audio(AUDIO_FILES.END)
       endAudioRef.current.loop = false
       endAudioRef.current.preload = 'auto'
     }
@@ -70,9 +63,6 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
       console.log('所有音樂預載入完成')
     })
 
-    // 提前切換的時間（秒），在音樂結束前這個時間點開始播放下一個
-    const CROSSFADE_TIME = 0.05
-
     // 用於追蹤是否已經觸發切換，避免重複觸發
     let hasTriggeredSwitchA = false
     let hasTriggeredSwitchB = false
@@ -83,10 +73,10 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
       if (!audio || hasTriggeredSwitchA) return
 
       const remaining = audio.duration - audio.currentTime
-      if (remaining <= CROSSFADE_TIME && remaining > 0) {
+      if (remaining <= AUDIO_SETTINGS.CROSSFADE_TIME && remaining > 0) {
         hasTriggeredSwitchA = true
-        hasTriggeredSwitchB = false // 重置 B 的標記，讓 B 之後可以觸發切換
-        if (gameStateRef.current === 'playing' && roundAudioBRef.current) {
+        hasTriggeredSwitchB = false
+        if (gameStateRef.current === GAME_STATES.PLAYING && roundAudioBRef.current) {
           roundAudioBRef.current.currentTime = 0
           roundAudioBRef.current.play().catch(err => {
             console.error('Round B 音樂播放失敗:', err)
@@ -102,10 +92,10 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
       if (!audio || hasTriggeredSwitchB) return
 
       const remaining = audio.duration - audio.currentTime
-      if (remaining <= CROSSFADE_TIME && remaining > 0) {
+      if (remaining <= AUDIO_SETTINGS.CROSSFADE_TIME && remaining > 0) {
         hasTriggeredSwitchB = true
-        hasTriggeredSwitchA = false // 重置 A 的標記，讓 A 之後可以觸發切換
-        if (gameStateRef.current === 'playing' && roundAudioARef.current) {
+        hasTriggeredSwitchA = false
+        if (gameStateRef.current === GAME_STATES.PLAYING && roundAudioARef.current) {
           roundAudioARef.current.currentTime = 0
           roundAudioARef.current.play().catch(err => {
             console.error('Round A 音樂播放失敗:', err)
@@ -121,7 +111,7 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
 
     // 當 start 音樂結束時，開始播放 round A
     const handleStartEnded = () => {
-      if (roundAudioARef.current && gameStateRef.current === 'playing') {
+      if (roundAudioARef.current && gameStateRef.current === GAME_STATES.PLAYING) {
         hasTriggeredSwitchA = false
         hasTriggeredSwitchB = false
         roundAudioARef.current.currentTime = 0
@@ -191,10 +181,8 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
 
   // 處理遊戲狀態變化
   useEffect(() => {
-    if (gameState === 'playing') {
-      // 遊戲開始播放
+    if (gameState === GAME_STATES.PLAYING) {
       if (!hasPlayedStartRef.current && currentGroupIndex === 0) {
-        // 第一次開始 - 播放 start 音樂
         hasPlayedStartRef.current = true
         lastGroupIndexRef.current = 0
         stopAllAudio()
@@ -206,16 +194,13 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
           })
         }
       } else if (currentGroupIndex > 0 && lastGroupIndexRef.current !== currentGroupIndex) {
-        // 切換到下一組 - 確保 round 音樂繼續播放
         lastGroupIndexRef.current = currentGroupIndex
 
-        // 檢查當前是否有 round 音樂在播放
         const roundA = roundAudioARef.current
         const roundB = roundAudioBRef.current
         const isAPlaying = roundA && !roundA.paused && roundA.currentTime > 0
         const isBPlaying = roundB && !roundB.paused && roundB.currentTime > 0
 
-        // 如果沒有音樂在播放，重新開始播放 round 音樂
         if (!isAPlaying && !isBPlaying) {
           console.log('[useAudioPlayer] 下一組開始，重新播放 round 音樂')
           if (roundA) {
@@ -227,11 +212,9 @@ function useAudioPlayer(gameState, currentGroupIndex = 0, isGameComplete = false
           }
         }
       }
-    } else if (gameState === 'paused') {
-      // 暫停 - 只停止遊戲音樂，保留結束音樂
+    } else if (gameState === GAME_STATES.PAUSED) {
       stopGameAudio()
-    } else if (gameState === 'idle') {
-      // 回到閒置狀態 - 停止所有音樂並重置
+    } else if (gameState === GAME_STATES.IDLE) {
       stopAllAudio()
       hasPlayedStartRef.current = false
       lastGroupIndexRef.current = -1

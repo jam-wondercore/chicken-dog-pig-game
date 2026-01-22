@@ -1,30 +1,9 @@
 import { useState, useRef } from 'react'
 import { loadAllImages, clearAllImages } from '../utils/imageStore'
-
-const TOPICS_STORAGE_KEY = 'chicken-dog-pig-topics'
-const GROUPS_STORAGE_KEY = 'chicken-dog-pig-groups'
-const IMAGE_STORAGE_KEY = 'chicken-dog-pig-images'
-
-// 估算 localStorage 使用量
-const getStorageUsage = () => {
-  let total = 0
-  for (const key in localStorage) {
-    if (localStorage.hasOwnProperty(key)) {
-      total += localStorage[key].length * 2 // UTF-16 每字元 2 bytes
-    }
-  }
-  return total
-}
-
-// 格式化檔案大小
-const formatSize = (bytes) => {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-}
-
-// 估算 localStorage 最大容量（通常是 5MB）
-const MAX_STORAGE = 5 * 1024 * 1024
+import { getStorageUsage } from '../utils/storage'
+import { formatSize } from '../utils/format'
+import { STORAGE_KEYS, STORAGE_CONFIG } from '../constants'
+import { ConfirmModal } from './common'
 
 function DataPage({ gameState }) {
   const { groups, topics, runGarbageCollection } = gameState
@@ -35,7 +14,7 @@ function DataPage({ gameState }) {
 
   // 計算儲存使用量
   const storageUsed = getStorageUsage()
-  const storagePercent = Math.min((storageUsed / MAX_STORAGE) * 100, 100)
+  const storagePercent = Math.min((storageUsed / STORAGE_CONFIG.MAX_SIZE) * 100, 100)
 
   // 計算各項資料統計
   const images = loadAllImages()
@@ -49,8 +28,8 @@ function DataPage({ gameState }) {
     const exportData = {
       version: 1,
       exportedAt: new Date().toISOString(),
-      groups: JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || '[]'),
-      topics: JSON.parse(localStorage.getItem(TOPICS_STORAGE_KEY) || '[]'),
+      groups: JSON.parse(localStorage.getItem(STORAGE_KEYS.GROUPS) || '[]'),
+      topics: JSON.parse(localStorage.getItem(STORAGE_KEYS.TOPICS) || '[]'),
       images: loadAllImages(),
     }
 
@@ -89,11 +68,10 @@ function DataPage({ gameState }) {
       // 計算導入資料大小
       const importSize = text.length * 2 // UTF-16
       const currentUsage = getStorageUsage()
-      const availableSpace = MAX_STORAGE - currentUsage
+      const availableSpace = STORAGE_CONFIG.MAX_SIZE - currentUsage
 
       // 檢查容量
       if (importSize > availableSpace * 1.5) {
-        // 留一些餘量
         const needSpace = formatSize(importSize)
         const haveSpace = formatSize(availableSpace)
         setImportResult({
@@ -115,20 +93,19 @@ function DataPage({ gameState }) {
       }
 
       // 覆蓋模式：先清除現有資料
-      localStorage.removeItem(GROUPS_STORAGE_KEY)
-      localStorage.removeItem(TOPICS_STORAGE_KEY)
-      localStorage.removeItem(IMAGE_STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEYS.GROUPS)
+      localStorage.removeItem(STORAGE_KEYS.TOPICS)
+      localStorage.removeItem(STORAGE_KEYS.IMAGES)
 
       // 導入圖片
       const existingImages = {}
-
       for (const [oldId, base64] of Object.entries(data.images)) {
         existingImages[oldId] = base64
       }
 
       // 儲存圖片
       try {
-        localStorage.setItem(IMAGE_STORAGE_KEY, JSON.stringify(existingImages))
+        localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(existingImages))
       } catch (err) {
         if (err.name === 'QuotaExceededError' || err.code === 22) {
           setImportResult({
@@ -155,7 +132,7 @@ function DataPage({ gameState }) {
           images: Array(8).fill(null),
         })
       }
-      localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(finalGroups))
+      localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(finalGroups))
 
       // 導入 topics
       const importedTopics = (data.topics || []).map(topic => ({
@@ -163,8 +140,7 @@ function DataPage({ gameState }) {
         imageIds: topic.imageIds || [],
       }))
 
-      const finalTopics = importedTopics
-      localStorage.setItem(TOPICS_STORAGE_KEY, JSON.stringify(finalTopics))
+      localStorage.setItem(STORAGE_KEYS.TOPICS, JSON.stringify(importedTopics))
 
       setImportResult({
         success: true,
@@ -188,8 +164,8 @@ function DataPage({ gameState }) {
 
   // 清除所有資料
   const handleClearAll = () => {
-    localStorage.removeItem(GROUPS_STORAGE_KEY)
-    localStorage.removeItem(TOPICS_STORAGE_KEY)
+    localStorage.removeItem(STORAGE_KEYS.GROUPS)
+    localStorage.removeItem(STORAGE_KEYS.TOPICS)
     clearAllImages()
     setShowConfirmClear(false)
     setImportResult({
@@ -218,7 +194,7 @@ function DataPage({ gameState }) {
           <div className="flex justify-between text-sm mb-1">
             <span className="text-gray-500">已使用</span>
             <span className="font-semibold text-gray-700">
-              {formatSize(storageUsed)} / {formatSize(MAX_STORAGE)}
+              {formatSize(storageUsed)} / {formatSize(STORAGE_CONFIG.MAX_SIZE)}
             </span>
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -341,35 +317,15 @@ function DataPage({ gameState }) {
       </div>
 
       {/* 確認清除對話框 */}
-      {showConfirmClear && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card-elevated rounded-2xl p-6 w-full max-w-sm">
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-100 flex items-center justify-center">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">確定要清除所有資料？</h3>
-              <p className="text-sm text-gray-500">
-                這將會刪除所有組別、主題和圖片。此操作無法復原！
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmClear(false)}
-                className="flex-1 py-3 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
-              >
-                確定清除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showConfirmClear}
+        onClose={() => setShowConfirmClear(false)}
+        onConfirm={handleClearAll}
+        title="確定要清除所有資料？"
+        message="這將會刪除所有組別、主題和圖片。此操作無法復原！"
+        confirmText="確定清除"
+        confirmVariant="danger"
+      />
     </div>
   )
 }

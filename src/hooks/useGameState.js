@@ -1,183 +1,64 @@
 import { useState, useEffect, useCallback } from 'react'
-import { saveImage, saveImages, getImage, getImages, deleteImage, deleteImages, cleanupUnusedImages } from '../utils/imageStore'
-
-const TOPICS_STORAGE_KEY = 'chicken-dog-pig-topics'
-const GROUPS_STORAGE_KEY = 'chicken-dog-pig-groups'
-
-// 遷移舊的 topics 資料（從 images base64 陣列 轉換為 imageIds）
-const migrateOldTopics = async (topics) => {
-  let needsMigration = false
-
-  const migratedTopics = await Promise.all(
-    topics.map(async (topic) => {
-      // 檢查是否是舊格式（有 images 但沒有 imageIds）
-      if (topic.images && !topic.imageIds) {
-        needsMigration = true
-        const imageIds = []
-        for (const base64 of topic.images) {
-          if (base64 && typeof base64 === 'string' && base64.startsWith('data:')) {
-            const imageId = await saveImage(base64)
-            if (imageId) imageIds.push(imageId)
-          }
-        }
-        // 返回新格式，移除舊的 images 欄位
-        const { images, ...rest } = topic
-        return { ...rest, imageIds }
-      }
-      return topic
-    })
-  )
-
-  return { topics: migratedTopics, migrated: needsMigration }
-}
-
-// 遷移舊的 groups 資料（從 base64 轉換為 imageIds）
-const migrateOldGroups = async (groups) => {
-  let needsMigration = false
-
-  const migratedGroups = await Promise.all(
-    groups.map(async (group) => {
-      // 檢查是否有 base64 格式的圖片
-      const hasBase64 = group.images.some(img => img && typeof img === 'string' && img.startsWith('data:'))
-      if (hasBase64) {
-        needsMigration = true
-        const newImages = await Promise.all(
-          group.images.map(async (img) => {
-            if (img && typeof img === 'string' && img.startsWith('data:')) {
-              return await saveImage(img)
-            }
-            return img // null 或已經是 imageId
-          })
-        )
-        return { ...group, images: newImages }
-      }
-      return group
-    })
-  )
-
-  return { groups: migratedGroups, migrated: needsMigration }
-}
-
-// 從 localStorage 讀取 Topics
-const loadTopicsFromStorage = () => {
-  try {
-    const data = localStorage.getItem(TOPICS_STORAGE_KEY)
-    if (data) {
-      return JSON.parse(data)
-    }
-  } catch (e) {
-    console.error('讀取 topics 失敗:', e)
-  }
-  return []
-}
-
-// 儲存 Topics 到 localStorage
-const saveTopicsToStorage = (topics) => {
-  try {
-    if (topics.length > 0) {
-      localStorage.setItem(TOPICS_STORAGE_KEY, JSON.stringify(topics))
-    } else {
-      localStorage.removeItem(TOPICS_STORAGE_KEY)
-    }
-    return true
-  } catch (e) {
-    console.error('儲存 topics 失敗:', e)
-    return false
-  }
-}
-
-// 從 localStorage 讀取 Groups
-const loadGroupsFromStorage = () => {
-  try {
-    const data = localStorage.getItem(GROUPS_STORAGE_KEY)
-    if (data) {
-      return JSON.parse(data)
-    }
-  } catch (e) {
-    console.error('讀取 groups 失敗:', e)
-  }
-  return null
-}
-
-// 儲存 Groups 到 localStorage
-const saveGroupsToStorage = (groups) => {
-  try {
-    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(groups))
-    return true
-  } catch (e) {
-    console.error('儲存 groups 失敗:', e)
-    return false
-  }
-}
-
-// 預設組別
-const getDefaultGroups = () => [{
-  id: 'group-1',
-  name: '第 1 組',
-  images: Array(8).fill(null) // 存放 imageId，null 表示空
-}]
+import { saveImage, saveImages, getImages, cleanupUnusedImages } from '../utils/imageStore'
+import {
+  loadTopicsFromStorage,
+  saveTopicsToStorage,
+  loadGroupsFromStorage,
+  saveGroupsToStorage,
+  getDefaultGroups,
+} from '../utils/storage'
+import {
+  migrateOldTopics,
+  migrateOldGroups,
+  needsTopicsMigration,
+  needsGroupsMigration,
+} from '../utils/migrations'
+import { fisherYatesShuffle, randomPickWithRepeat } from '../utils/shuffle'
+import { TABS, GAME_STATES, DEFAULT_GROUP_SIZE, MAX_GROUPS } from '../constants'
 
 function useGameState() {
-  const [currentTab, setCurrentTab] = useState('setup')
+  // ========== 基礎狀態 ==========
+  const [currentTab, setCurrentTab] = useState(TABS.SETUP)
   const [groups, setGroups] = useState(() => loadGroupsFromStorage() || getDefaultGroups())
   const [currentGroupId, setCurrentGroupId] = useState(() => {
     const saved = loadGroupsFromStorage()
     return saved && saved.length > 0 ? saved[0].id : 'group-1'
   })
-  const [gameState, setGameState] = useState('idle')
+
+  // ========== 遊戲狀態 ==========
+  const [gameState, setGameState] = useState(GAME_STATES.IDLE)
   const [currentBeatIndex, setCurrentBeatIndex] = useState(0)
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0)
 
-  // Topics 主題庫（存放 imageIds）
+  // ========== Topics 主題庫狀態 ==========
   const [topics, setTopics] = useState(() => loadTopicsFromStorage())
   const [currentTopicId, setCurrentTopicId] = useState(null)
   const [isMigrating, setIsMigrating] = useState(false)
 
-  // 啟動時檢查並遷移舊資料
+  // ========== 資料遷移 ==========
   useEffect(() => {
-    const checkAndMigrate = async () => {
+    const checkAndMigrateTopics = async () => {
       const loadedTopics = loadTopicsFromStorage()
-      // 檢查是否有舊格式的資料
-      const hasOldFormat = loadedTopics.some(t => t.images && !t.imageIds)
-      if (hasOldFormat) {
+      if (needsTopicsMigration(loadedTopics)) {
         setIsMigrating(true)
-        console.log('偵測到舊格式資料，開始遷移...')
+        console.log('偵測到舊格式 topics 資料，開始遷移...')
         const { topics: migratedTopics, migrated } = await migrateOldTopics(loadedTopics)
         if (migrated) {
           setTopics(migratedTopics)
-          console.log('資料遷移完成')
+          console.log('Topics 資料遷移完成')
         }
         setIsMigrating(false)
       }
     }
-    checkAndMigrate()
+    checkAndMigrateTopics()
   }, [])
 
-  // 當 topics 改變時，儲存到 localStorage
-  useEffect(() => {
-    if (!isMigrating) {
-      saveTopicsToStorage(topics)
-    }
-  }, [topics, isMigrating])
-
-  // 當 groups 改變時，儲存到 localStorage
-  useEffect(() => {
-    if (!isMigrating) {
-      saveGroupsToStorage(groups)
-    }
-  }, [groups, isMigrating])
-
-  // 啟動時檢查並遷移舊的 groups 資料
   useEffect(() => {
     const checkAndMigrateGroups = async () => {
       const loadedGroups = loadGroupsFromStorage()
       if (!loadedGroups) return
 
-      // 檢查是否有舊格式的資料（base64）
-      const hasOldFormat = loadedGroups.some(g =>
-        g.images.some(img => img && typeof img === 'string' && img.startsWith('data:'))
-      )
-      if (hasOldFormat) {
+      if (needsGroupsMigration(loadedGroups)) {
         setIsMigrating(true)
         console.log('偵測到舊格式 groups 資料，開始遷移...')
         const { groups: migratedGroups, migrated } = await migrateOldGroups(loadedGroups)
@@ -191,40 +72,65 @@ function useGameState() {
     checkAndMigrateGroups()
   }, [])
 
-  // 獲取當前組別
-  const getCurrentGroup = () => {
-    return groups.find(g => g.id === currentGroupId) || groups[0]
-  }
+  // ========== 自動儲存 ==========
+  useEffect(() => {
+    if (!isMigrating) {
+      saveTopicsToStorage(topics)
+    }
+  }, [topics, isMigrating])
 
-  // 獲取組別圖片的 base64（用於顯示）
+  useEffect(() => {
+    if (!isMigrating) {
+      saveGroupsToStorage(groups)
+    }
+  }, [groups, isMigrating])
+
+  // ========== 垃圾回收 ==========
+  const runGarbageCollection = useCallback(() => {
+    const usedImageIds = []
+
+    groups.forEach(g => {
+      g.images.forEach(id => {
+        if (id) usedImageIds.push(id)
+      })
+    })
+
+    topics.forEach(t => {
+      (t.imageIds || []).forEach(id => {
+        if (id) usedImageIds.push(id)
+      })
+    })
+
+    cleanupUnusedImages(usedImageIds)
+  }, [groups, topics])
+
+  // ========== Groups 相關方法 ==========
+  const getCurrentGroup = useCallback(() => {
+    return groups.find(g => g.id === currentGroupId) || groups[0]
+  }, [groups, currentGroupId])
+
   const getGroupImages = useCallback((groupId) => {
     const group = groups.find(g => g.id === groupId)
-    if (!group) return Array(8).fill(null)
+    if (!group) return Array(DEFAULT_GROUP_SIZE).fill(null)
     return getImages(group.images)
   }, [groups])
 
-  // 新增組別
-  const addGroup = () => {
+  const addGroup = useCallback(() => {
+    if (groups.length >= MAX_GROUPS) return
+
     const newGroup = {
       id: `group-${Date.now()}`,
       name: `第 ${groups.length + 1} 組`,
-      images: Array(8).fill(null)
+      images: Array(DEFAULT_GROUP_SIZE).fill(null)
     }
-    setGroups([...groups, newGroup])
+    setGroups(prev => [...prev, newGroup])
     setCurrentGroupId(newGroup.id)
-  }
+  }, [groups.length])
 
-  // 刪除組別
-  const deleteGroup = (groupId) => {
+  const deleteGroup = useCallback((groupId) => {
     if (groups.length === 1) {
       alert('至少需要保留一組')
       return
-    }
-
-    const group = groups.find(g => g.id === groupId)
-    if (group) {
-      // 刪除組別中的圖片（如果沒有被其他地方使用）
-      // 這裡先不刪除圖片，等垃圾回收時處理
     }
 
     const filtered = groups.filter(g => g.id !== groupId)
@@ -233,23 +139,20 @@ function useGameState() {
     if (currentGroupId === groupId) {
       setCurrentGroupId(filtered[0].id)
     }
-  }
+  }, [groups, currentGroupId])
 
-  // 更新組別圖片（傳入 file 或 imageId）
-  const updateGroupImage = async (groupId, imageIndex, fileOrImageId) => {
+  const updateGroupImage = useCallback(async (groupId, imageIndex, fileOrImageId) => {
     let imageId = fileOrImageId
 
-    // 如果是 File 對象，先上傳壓縮
     if (fileOrImageId instanceof File) {
       const reader = new FileReader()
-      const dataUrl = await new Promise((resolve) => {
+      const dataUrl = await new Promise((resolve, reject) => {
         reader.onload = (e) => resolve(e.target.result)
+        reader.onerror = reject
         reader.readAsDataURL(fileOrImageId)
       })
       imageId = await saveImage(dataUrl)
-    }
-    // 如果是 base64 字串（data:image 開頭），先儲存
-    else if (typeof fileOrImageId === 'string' && fileOrImageId.startsWith('data:')) {
+    } else if (typeof fileOrImageId === 'string' && fileOrImageId.startsWith('data:')) {
       imageId = await saveImage(fileOrImageId)
     }
 
@@ -263,10 +166,9 @@ function useGameState() {
       }
       return group
     }))
-  }
+  }, [])
 
-  // 批次上傳圖片到組別
-  const batchUploadImages = async (groupId, files) => {
+  const batchUploadImages = useCallback(async (groupId, files) => {
     const group = groups.find(g => g.id === groupId)
     if (!group) return
 
@@ -287,76 +189,70 @@ function useGameState() {
       }
       return g
     }))
-  }
+  }, [groups])
 
-  // 清除所有資料
-  const clearAllData = () => {
-    if (confirm('確定要清除所有組別與圖片資料嗎？')) {
-      setGroups(getDefaultGroups())
-      setCurrentGroupId('group-1')
-      setGameState('idle')
-      setCurrentTab('setup')
-      // 觸發垃圾回收
-      setTimeout(() => runGarbageCollection(), 100)
-    }
-  }
+  const deleteGroupImage = useCallback((groupId, imageIndex) => {
+    setGroups(prev => prev.map(group => {
+      if (group.id === groupId) {
+        const newImages = [...group.images]
+        newImages[imageIndex] = null
+        return { ...group, images: newImages }
+      }
+      return group
+    }))
 
-  // 開始遊戲
-  const startGame = () => {
-    setCurrentGroupIndex(0)
-    setCurrentBeatIndex(0)
-    setGameState('playing')
-    setCurrentTab('game')
-  }
+    setTimeout(() => runGarbageCollection(), 100)
+  }, [runGarbageCollection])
 
-  // 暫停遊戲
-  const pauseGame = () => {
-    setGameState('paused')
-  }
+  const reorderGroups = useCallback((fromIndex, toIndex) => {
+    setGroups(prev => {
+      const newGroups = [...prev]
+      const [removed] = newGroups.splice(fromIndex, 1)
+      newGroups.splice(toIndex, 0, removed)
+      return newGroups
+    })
+  }, [])
 
-  // 開始/重新開始遊戲
-  const resumeGame = () => {
-    setCurrentGroupIndex(0)
-    setCurrentBeatIndex(0)
-    setGameState('playing')
-  }
+  // ========== 打亂功能（使用 Fisher-Yates）==========
+  const shuffleGroup = useCallback((groupId) => {
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        return { ...g, images: fisherYatesShuffle(g.images) }
+      }
+      return g
+    }))
+  }, [])
 
-  // 回到設定頁
-  const backToSetup = () => {
-    setGameState('idle')
-    setCurrentTab('setup')
-    setCurrentBeatIndex(0)
-    setCurrentGroupIndex(0)
-  }
+  const shuffleAllGroups = useCallback(() => {
+    setGroups(prev => prev.map(g => ({
+      ...g,
+      images: fisherYatesShuffle(g.images)
+    })))
+  }, [])
 
-  // ========== Topics 主題庫相關方法 ==========
-
-  // 獲取當前 Topic
-  const getCurrentTopic = () => {
+  // ========== Topics 相關方法 ==========
+  const getCurrentTopic = useCallback(() => {
     return topics.find(t => t.id === currentTopicId) || null
-  }
+  }, [topics, currentTopicId])
 
-  // 獲取 Topic 圖片的 base64（用於顯示）
   const getTopicImages = useCallback((topicId) => {
     const topic = topics.find(t => t.id === topicId)
     if (!topic) return []
     return getImages(topic.imageIds || [])
   }, [topics])
 
-  // 新增 Topic
-  const addTopic = (name) => {
+  const addTopic = useCallback((name) => {
     const newTopic = {
       id: `topic-${Date.now()}`,
       name: name || `主題 ${topics.length + 1}`,
       imageIds: []
     }
-    setTopics([...topics, newTopic])
+    setTopics(prev => [...prev, newTopic])
     setCurrentTopicId(newTopic.id)
     return newTopic
-  }
+  }, [topics.length])
 
-  // 刪除 Topic
-  const deleteTopic = (topicId) => {
+  const deleteTopic = useCallback((topicId) => {
     const filtered = topics.filter(t => t.id !== topicId)
     setTopics(filtered)
 
@@ -364,35 +260,32 @@ function useGameState() {
       setCurrentTopicId(filtered.length > 0 ? filtered[0].id : null)
     }
 
-    // 觸發垃圾回收
     setTimeout(() => runGarbageCollection(), 100)
-  }
+  }, [topics, currentTopicId, runGarbageCollection])
 
-  // 重新命名 Topic
-  const renameTopic = (topicId, newName) => {
+  const renameTopic = useCallback((topicId, newName) => {
     setTopics(prev => prev.map(topic => {
       if (topic.id === topicId) {
         return { ...topic, name: newName }
       }
       return topic
     }))
-  }
+  }, [])
 
-  // 新增圖片到 Topic
-  const addImageToTopic = async (topicId, fileOrDataUrl) => {
+  const addImageToTopic = useCallback(async (topicId, fileOrDataUrl) => {
     let imageId
 
     if (fileOrDataUrl instanceof File) {
       const reader = new FileReader()
-      const dataUrl = await new Promise((resolve) => {
+      const dataUrl = await new Promise((resolve, reject) => {
         reader.onload = (e) => resolve(e.target.result)
+        reader.onerror = reject
         reader.readAsDataURL(fileOrDataUrl)
       })
       imageId = await saveImage(dataUrl)
     } else if (typeof fileOrDataUrl === 'string' && fileOrDataUrl.startsWith('data:')) {
       imageId = await saveImage(fileOrDataUrl)
     } else {
-      // 已經是 imageId
       imageId = fileOrDataUrl
     }
 
@@ -404,10 +297,9 @@ function useGameState() {
       }
       return topic
     }))
-  }
+  }, [])
 
-  // 批次新增圖片到 Topic
-  const batchAddImagesToTopic = async (topicId, files) => {
+  const batchAddImagesToTopic = useCallback(async (topicId, files) => {
     const imageIds = await saveImages(Array.from(files))
 
     setTopics(prev => prev.map(topic => {
@@ -416,56 +308,21 @@ function useGameState() {
       }
       return topic
     }))
-  }
+  }, [])
 
-  // 從 Topic 刪除圖片
-  const deleteImageFromTopic = (topicId, imageIndex) => {
-    setTopics(prev => {
-      const newTopics = prev.map(topic => {
-        if (topic.id === topicId) {
-          const newImageIds = (topic.imageIds || []).filter((_, idx) => idx !== imageIndex)
-          return { ...topic, imageIds: newImageIds }
-        }
-        return topic
-      })
-      return newTopics
-    })
-
-    // 觸發垃圾回收
-    setTimeout(() => runGarbageCollection(), 100)
-  }
-
-  // 調換組別順序
-  const reorderGroups = (fromIndex, toIndex) => {
-    setGroups(prev => {
-      const newGroups = [...prev]
-      const [removed] = newGroups.splice(fromIndex, 1)
-      newGroups.splice(toIndex, 0, removed)
-      return newGroups
-    })
-  }
-
-  // 打亂單一組別的圖片順序
-  const shuffleGroup = (groupId) => {
-    setGroups(prev => prev.map(g => {
-      if (g.id === groupId) {
-        const shuffled = [...g.images].sort(() => Math.random() - 0.5)
-        return { ...g, images: shuffled }
+  const deleteImageFromTopic = useCallback((topicId, imageIndex) => {
+    setTopics(prev => prev.map(topic => {
+      if (topic.id === topicId) {
+        const newImageIds = (topic.imageIds || []).filter((_, idx) => idx !== imageIndex)
+        return { ...topic, imageIds: newImageIds }
       }
-      return g
+      return topic
     }))
-  }
 
-  // 打亂所有組別的圖片順序
-  const shuffleAllGroups = () => {
-    setGroups(prev => prev.map(g => ({
-      ...g,
-      images: [...g.images].sort(() => Math.random() - 0.5)
-    })))
-  }
+    setTimeout(() => runGarbageCollection(), 100)
+  }, [runGarbageCollection])
 
-  // 從 Topic 匯入隨機圖片到 Group
-  const importFromTopic = (groupId, topicId) => {
+  const importFromTopic = useCallback((groupId, topicId) => {
     const topic = topics.find(t => t.id === topicId)
     if (!topic || !topic.imageIds || topic.imageIds.length === 0) {
       alert('此主題沒有圖片可匯入')
@@ -476,16 +333,7 @@ function useGameState() {
     if (!group) return
 
     const needed = group.images.length
-
-    // 從 topic 隨機選擇 imageIds
-    const shuffled = [...topic.imageIds].sort(() => Math.random() - 0.5)
-    const selected = shuffled.slice(0, needed)
-
-    // 如果 topic 圖片不足，重複選擇直到填滿
-    const finalImageIds = []
-    for (let i = 0; i < needed; i++) {
-      finalImageIds.push(selected[i % selected.length])
-    }
+    const finalImageIds = randomPickWithRepeat(topic.imageIds, needed)
 
     setGroups(prev => prev.map(g => {
       if (g.id === groupId) {
@@ -493,55 +341,53 @@ function useGameState() {
       }
       return g
     }))
-  }
+  }, [topics, groups])
 
-  // 垃圾回收：清理未使用的圖片
-  const runGarbageCollection = useCallback(() => {
-    const usedImageIds = []
+  // ========== 遊戲控制 ==========
+  const startGame = useCallback(() => {
+    setCurrentGroupIndex(0)
+    setCurrentBeatIndex(0)
+    setGameState(GAME_STATES.PLAYING)
+    setCurrentTab(TABS.GAME)
+  }, [])
 
-    // 收集 groups 使用的 imageIds
-    groups.forEach(g => {
-      g.images.forEach(id => {
-        if (id) usedImageIds.push(id)
-      })
-    })
+  const pauseGame = useCallback(() => {
+    setGameState(GAME_STATES.PAUSED)
+  }, [])
 
-    // 收集 topics 使用的 imageIds
-    topics.forEach(t => {
-      (t.imageIds || []).forEach(id => {
-        if (id) usedImageIds.push(id)
-      })
-    })
+  const resumeGame = useCallback(() => {
+    setCurrentGroupIndex(0)
+    setCurrentBeatIndex(0)
+    setGameState(GAME_STATES.PLAYING)
+  }, [])
 
-    cleanupUnusedImages(usedImageIds)
-  }, [groups, topics])
+  const backToSetup = useCallback(() => {
+    setGameState(GAME_STATES.IDLE)
+    setCurrentTab(TABS.SETUP)
+    setCurrentBeatIndex(0)
+    setCurrentGroupIndex(0)
+  }, [])
 
-  // 刪除組別中的單張圖片
-  const deleteGroupImage = (groupId, imageIndex) => {
-    setGroups(prev => prev.map(group => {
-      if (group.id === groupId) {
-        const newImages = [...group.images]
-        newImages[imageIndex] = null
-        return { ...group, images: newImages }
-      }
-      return group
-    }))
-
-    // 觸發垃圾回收
-    setTimeout(() => runGarbageCollection(), 100)
-  }
+  // ========== 資料管理 ==========
+  const clearAllData = useCallback(() => {
+    if (confirm('確定要清除所有組別與圖片資料嗎？')) {
+      setGroups(getDefaultGroups())
+      setCurrentGroupId('group-1')
+      setGameState(GAME_STATES.IDLE)
+      setCurrentTab(TABS.SETUP)
+      setTimeout(() => runGarbageCollection(), 100)
+    }
+  }, [runGarbageCollection])
 
   return {
+    // Tab 控制
     currentTab,
     setCurrentTab,
+
+    // Groups 相關
     groups,
     currentGroupId,
     setCurrentGroupId,
-    gameState,
-    currentBeatIndex,
-    setCurrentBeatIndex,
-    currentGroupIndex,
-    setCurrentGroupIndex,
     getCurrentGroup,
     getGroupImages,
     addGroup,
@@ -549,11 +395,10 @@ function useGameState() {
     deleteGroupImage,
     updateGroupImage,
     batchUploadImages,
-    clearAllData,
-    startGame,
-    pauseGame,
-    resumeGame,
-    backToSetup,
+    reorderGroups,
+    shuffleGroup,
+    shuffleAllGroups,
+
     // Topics 相關
     topics,
     currentTopicId,
@@ -567,9 +412,20 @@ function useGameState() {
     batchAddImagesToTopic,
     deleteImageFromTopic,
     importFromTopic,
-    shuffleGroup,
-    shuffleAllGroups,
-    reorderGroups,
+
+    // 遊戲控制
+    gameState,
+    currentBeatIndex,
+    setCurrentBeatIndex,
+    currentGroupIndex,
+    setCurrentGroupIndex,
+    startGame,
+    pauseGame,
+    resumeGame,
+    backToSetup,
+
+    // 資料管理
+    clearAllData,
     runGarbageCollection,
   }
 }
