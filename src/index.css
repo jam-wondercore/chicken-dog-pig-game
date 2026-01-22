@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-color: #ff4757;
+    --secondary-color: #1e90ff;
+    --bg-color: #f1f2f6;
+    --active-shadow: 0 0 20px rgba(255, 71, 87, 0.7);
+  }
+
+  body {
+    font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  }
+}
