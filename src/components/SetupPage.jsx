@@ -9,27 +9,19 @@ function SetupPage({ gameState }) {
     addGroup,
     deleteGroup,
     updateGroupImage,
-    batchUploadImages,
     clearAllData,
     topics,
     importFromTopic,
+    shuffleGroup,
+    shuffleAllGroups,
   } = gameState
 
   const [showTopicPicker, setShowTopicPicker] = useState(false)
 
-  const batchInputRef = useRef(null)
   const singleInputRef = useRef(null)
   const currentEditIndex = useRef(null)
 
   const currentGroup = groups.find(g => g.id === currentGroupId) || groups[0]
-
-  const handleBatchUpload = (e) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      batchUploadImages(currentGroupId, files)
-    }
-    e.target.value = ''
-  }
 
   const handleSingleUpload = (index) => {
     currentEditIndex.current = index
@@ -101,35 +93,37 @@ function SetupPage({ gameState }) {
 
       {/* 操作按鈕 */}
       <div className="flex flex-col gap-3">
+        {/* 從主題匯入 */}
+        <button
+          onClick={() => setShowTopicPicker(true)}
+          disabled={topics.length === 0}
+          className={`w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
+            topics.length === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+          }`}
+        >
+          <span className="text-lg">📥</span>
+          從主題匯入
+        </button>
+
+        {/* 打亂按鈕 */}
         <div className="flex gap-3">
           <button
-            onClick={() => batchInputRef.current?.click()}
-            className="btn-primary flex-1 py-4 text-base flex items-center justify-center gap-2"
+            onClick={() => shuffleGroup(currentGroupId)}
+            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           >
-            <span className="text-lg">📤</span>
-            批次上傳
+            <span>🔀</span>
+            隨機打亂
           </button>
           <button
-            onClick={() => setShowTopicPicker(true)}
-            disabled={topics.length === 0}
-            className={`flex-1 py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
-              topics.length === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
-            }`}
+            onClick={shuffleAllGroups}
+            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           >
-            <span className="text-lg">📥</span>
-            從主題匯入
+            <span>🔀</span>
+            打亂全部
           </button>
         </div>
-        <input
-          ref={batchInputRef}
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleBatchUpload}
-          className="hidden"
-        />
 
         {/* 主題選擇器 Modal */}
         {showTopicPicker && (

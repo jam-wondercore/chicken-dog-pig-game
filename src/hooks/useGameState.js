@@ -120,6 +120,7 @@ function useGameState() {
       images: Array(8).fill(null)
     }
     setGroups([...groups, newGroup])
+    setCurrentGroupId(newGroup.id)
   }
 
   // 刪除組別
@@ -291,6 +292,25 @@ function useGameState() {
     })
   }
 
+  // 打亂單一組別的圖片順序
+  const shuffleGroup = (groupId) => {
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        const shuffled = [...g.images].sort(() => Math.random() - 0.5)
+        return { ...g, images: shuffled }
+      }
+      return g
+    }))
+  }
+
+  // 打亂所有組別的圖片順序
+  const shuffleAllGroups = () => {
+    setGroups(prev => prev.map(g => ({
+      ...g,
+      images: [...g.images].sort(() => Math.random() - 0.5)
+    })))
+  }
+
   // 從 Topic 匯入隨機圖片到 Group
   const importFromTopic = (groupId, topicId) => {
     const topic = topics.find(t => t.id === topicId)
@@ -357,6 +377,8 @@ function useGameState() {
     batchAddImagesToTopic,
     deleteImageFromTopic,
     importFromTopic,
+    shuffleGroup,
+    shuffleAllGroups,
   }
 }
 
