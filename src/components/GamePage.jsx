@@ -6,7 +6,7 @@ import useAudioPlayer from '../hooks/useAudioPlayer'
 const RHYTHM_SETTINGS = {
   FIRST_DELAY: 3100,      // 前奏延遲 (音樂開始後的前奏時間)
   BEAT_INTERVAL: 300,     // 每拍間隔 (快節奏跳動)
-  WAIT_TIME: 2600,        // 每組等待時間 (ms)
+  WAIT_TIME: 2800,        // 每組等待時間 (ms)
   TOTAL_BEATS: 8,         // 每組跳動 n 拍
 }
 
@@ -85,6 +85,9 @@ function GamePage({ gameState }) {
     // 等待階段 - 等待 8 拍後開始跳動
     const startWaiting = () => {
       currentPhaseRef.current = 'waiting'
+      // 等待階段不顯示紅框，設為 -1
+      beatIndexRef.current = -1
+      setCurrentBeatIndex(-1)
       console.log('[startWaiting] 開始等待', RHYTHM_SETTINGS.WAIT_TIME, 'ms')
 
       const waitTime = RHYTHM_SETTINGS.WAIT_TIME
@@ -137,8 +140,9 @@ function GamePage({ gameState }) {
         console.log('[startRhythm] 第一次開始,播放前奏')
         isFirstRunRef.current = false
         currentPhaseRef.current = 'intro'
-        beatIndexRef.current = 0
-        setCurrentBeatIndex(0)
+        // 前奏階段不顯示紅框，設為 -1
+        beatIndexRef.current = -1
+        setCurrentBeatIndex(-1)
 
         timerRef.current = setTimeout(() => {
           console.log('[startRhythm] 前奏結束,顯示矩陣並開始等待')
@@ -195,7 +199,7 @@ function GamePage({ gameState }) {
 
     // 重置所有狀態
     setCurrentGroupIndex(0)
-    setCurrentBeatIndex(0)
+    setCurrentBeatIndex(-1)
     isFirstRunRef.current = true
     currentPhaseRef.current = 'intro'
 
