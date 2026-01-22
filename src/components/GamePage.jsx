@@ -25,6 +25,8 @@ function GamePage({ gameState }) {
 
   // 遊戲完成狀態
   const [isGameComplete, setIsGameComplete] = useState(false)
+  // 是否顯示圖片矩陣（前奏結束後才顯示）
+  const [showGrid, setShowGrid] = useState(false)
 
   // 音樂播放 - 傳遞 currentGroupIndex 和遊戲完成狀態
   const { stopAllAudio } = useAudioPlayer(playState, currentGroupIndex, isGameComplete)
@@ -35,10 +37,11 @@ function GamePage({ gameState }) {
   const currentPhaseRef = useRef('intro') // 'intro' | 'beating' | 'pausing'
   const isFirstRunRef = useRef(true)
 
-  // 當 playState 變成非 playing 時，重置 isFirstRunRef
+  // 當 playState 變成非 playing 時，重置 isFirstRunRef 和隱藏矩陣
   useEffect(() => {
     if (playState !== 'playing') {
       isFirstRunRef.current = true
+      setShowGrid(false)
     }
   }, [playState])
 
@@ -115,7 +118,7 @@ function GamePage({ gameState }) {
       } else {
         // 所有組播放完畢
         console.log('[finishCurrentGroup] 所有組播放完畢')
-        showGameComplete()
+        handleGameComplete()
       }
     }
 
@@ -138,7 +141,8 @@ function GamePage({ gameState }) {
         setCurrentBeatIndex(0)
 
         timerRef.current = setTimeout(() => {
-          console.log('[startRhythm] 前奏結束,開始等待')
+          console.log('[startRhythm] 前奏結束,顯示矩陣並開始等待')
+          setShowGrid(true)
           startWaiting()
         }, RHYTHM_SETTINGS.FIRST_DELAY)
       } else {
@@ -160,22 +164,25 @@ function GamePage({ gameState }) {
   }, [playState, currentGroupIndex])
 
   // 顯示完成訊息
-  const showGameComplete = () => {
+  const handleGameComplete = () => {
     // 標記遊戲完成，觸發結束音樂
     setIsGameComplete(true)
+    setShowGrid(false)
     // 暫停遊戲狀態（但不停止結束音樂）
     pauseGame()
+  }
 
-    setTimeout(() => {
-      if (confirm(`🎉 播放完成！\n已播放 ${groups.length} 組圖片\n\n要重新播放嗎？`)) {
-        setIsGameComplete(false)
-        restartGame()
-      } else {
-        setIsGameComplete(false)
-        stopAllAudio()
-        backToSetup()
-      }
-    }, 800)
+  // 處理重新播放
+  const handleReplay = () => {
+    setIsGameComplete(false)
+    restartGame()
+  }
+
+  // 處理返回設定
+  const handleBackToSetup = () => {
+    setIsGameComplete(false)
+    stopAllAudio()
+    backToSetup()
   }
 
   // 重新開始遊戲 (從頭開始)
@@ -198,15 +205,71 @@ function GamePage({ gameState }) {
 
   const currentGroup = groups[currentGroupIndex]
 
+  // 判斷是否處於前奏階段
+  const isInIntro = playState === 'playing' && !showGrid
+
   return (
     <div className="max-w-[520px] mx-auto px-4">
-      {/* 遊戲網格 */}
+      {/* 遊戲網格 - 根據狀態顯示不同內容 */}
       <div className="mb-6">
-        <ImageGrid
-          images={currentGroup.images}
-          activeIndex={currentBeatIndex}
-          mode="game"
-        />
+        {showGrid ? (
+          <ImageGrid
+            images={currentGroup.images}
+            activeIndex={currentBeatIndex}
+            mode="game"
+          />
+        ) : (
+          <div className="glass-card-elevated w-full max-w-[480px] mx-auto p-8 rounded-2xl">
+            <div className="flex flex-col items-center justify-center py-8">
+              {isGameComplete ? (
+                /* 遊戲完成畫面 */
+                <>
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-6 animate-float">
+                    <span className="text-5xl">🎉</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800 mb-2">播放完成！</p>
+                  <p className="text-sm text-gray-500 mb-6">已播放 {groups.length} 組圖片</p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={handleReplay}
+                      className="flex-1 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:-translate-y-0.5"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+                        boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                      }}
+                    >
+                      🔄 重新播放
+                    </button>
+                    <button
+                      onClick={handleBackToSetup}
+                      className="flex-1 py-3 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      ⚙️ 返回設定
+                    </button>
+                  </div>
+                </>
+              ) : isInIntro ? (
+                /* 前奏播放中 */
+                <>
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-6 animate-pulse">
+                    <span className="text-4xl">🎵</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-700 mb-2">前奏播放中...</p>
+                  <p className="text-sm text-gray-400">準備開始！</p>
+                </>
+              ) : (
+                /* 準備開始畫面 */
+                <>
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center mb-6">
+                    <span className="text-4xl">🎮</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-700 mb-2">準備好了嗎？</p>
+                  <p className="text-sm text-gray-400">點擊「開始遊戲」開始挑戰</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 操作按鈕 */}
