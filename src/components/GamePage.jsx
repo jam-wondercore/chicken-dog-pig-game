@@ -199,9 +199,9 @@ function GamePage({ gameState }) {
   const currentGroup = groups[currentGroupIndex]
 
   return (
-    <div className="max-w-[500px] mx-auto px-4">
+    <div className="max-w-[520px] mx-auto px-4">
       {/* 遊戲網格 */}
-      <div className="mb-5">
+      <div className="mb-6">
         <ImageGrid
           images={currentGroup.images}
           activeIndex={currentBeatIndex}
@@ -210,11 +210,15 @@ function GamePage({ gameState }) {
       </div>
 
       {/* 操作按鈕 */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {playState === 'playing' ? (
           <button
             onClick={pauseGame}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
+            style={{
+              background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+              boxShadow: '0 4px 20px rgba(244, 63, 94, 0.4)',
+            }}
           >
             <span className="text-xl">⏹</span>
             結束遊戲
@@ -222,18 +226,56 @@ function GamePage({ gameState }) {
         ) : (
           <button
             onClick={resumeGame}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+            }}
           >
-            <span className="text-xl">▶</span>
+            <span className="text-xl">▶️</span>
             開始遊戲
           </button>
         )}
 
-        <div className="border-l-4 py-3 px-5 rounded-r-xl font-medium text-sm mt-2 flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-500 text-purple-800">
-          <span className={`text-lg ${playState === 'playing' ? 'animate-pulse' : ''}`}>🎵</span>
-          <span>
-            {playState === 'playing' ? '音樂播放中' : '已暫停'} - 第 <span className="font-bold text-base">{currentGroupIndex + 1}</span>/<span className="font-bold">{groups.length}</span> 組
-          </span>
+        {/* Game Status Card */}
+        <div className="glass-card p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                playState === 'playing'
+                  ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                  : 'bg-gradient-to-br from-gray-300 to-gray-400'
+              }`}
+            >
+              <span className={`text-lg ${playState === 'playing' ? 'animate-pulse-soft' : ''}`}>
+                🎵
+              </span>
+            </div>
+            <div>
+              <div className="text-xs text-gray-400 font-medium">
+                {playState === 'playing' ? '播放中' : '已暫停'}
+              </div>
+              <div className="text-sm font-bold text-gray-700">
+                第 {currentGroupIndex + 1} / {groups.length} 組
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Indicator */}
+          <div className="flex gap-1">
+            {Array.from({ length: groups.length }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i < currentGroupIndex
+                    ? 'bg-emerald-400'
+                    : i === currentGroupIndex
+                    ? 'bg-indigo-500 scale-125'
+                    : 'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

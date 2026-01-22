@@ -1,39 +1,37 @@
 function TabBar({ currentTab, onTabChange }) {
+  const tabs = [
+    { id: 'setup', label: '設定', icon: '⚙️' },
+    { id: 'game', label: '遊戲', icon: '🎮' },
+    { id: 'topics', label: '圖片庫', icon: '📁' },
+  ]
+
   return (
-    <div className="flex gap-2 mb-6 bg-white p-1.5 rounded-xl shadow-md">
-      <button
-        onClick={() => onTabChange('setup')}
-        className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-200 text-base flex items-center gap-2 ${
-          currentTab === 'setup'
-            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-200'
-            : 'text-gray-600 hover:bg-gray-50'
-        }`}
-      >
-        <span className="text-lg">⚙️</span>
-        設定
-      </button>
-      <button
-        onClick={() => onTabChange('game')}
-        className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-200 text-base flex items-center gap-2 ${
-          currentTab === 'game'
-            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-200'
-            : 'text-gray-600 hover:bg-gray-50'
-        }`}
-      >
-        <span className="text-lg">🎮</span>
-        遊戲
-      </button>
-      <button
-        onClick={() => onTabChange('topics')}
-        className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-200 text-base flex items-center gap-2 ${
-          currentTab === 'topics'
-            ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg shadow-orange-200'
-            : 'text-gray-600 hover:bg-gray-50'
-        }`}
-      >
-        <span className="text-lg">📁</span>
-        圖片庫
-      </button>
+    <div className="glass-card p-1.5 rounded-2xl inline-flex gap-1">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+            currentTab === tab.id
+              ? 'text-white'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+          }`}
+        >
+          {/* Active Background */}
+          {currentTab === tab.id && (
+            <div
+              className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-lg"
+              style={{
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+              }}
+            />
+          )}
+          <span className={`relative text-base ${currentTab === tab.id ? 'animate-pulse-soft' : ''}`}>
+            {tab.icon}
+          </span>
+          <span className="relative">{tab.label}</span>
+        </button>
+      ))}
     </div>
   )
 }
