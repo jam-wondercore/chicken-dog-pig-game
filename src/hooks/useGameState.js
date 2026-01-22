@@ -291,6 +291,39 @@ function useGameState() {
     })
   }
 
+  // 從 Topic 匯入隨機圖片到 Group
+  const importFromTopic = (groupId, topicId) => {
+    const topic = topics.find(t => t.id === topicId)
+    if (!topic || topic.images.length === 0) {
+      alert('此主題沒有圖片可匯入')
+      return
+    }
+
+    const group = groups.find(g => g.id === groupId)
+    if (!group) return
+
+    // 需要的圖片數量（group 的 images 長度，通常是 8）
+    const needed = group.images.length
+
+    // 從 topic 隨機選擇 n 張圖片
+    const shuffled = [...topic.images].sort(() => Math.random() - 0.5)
+    const selected = shuffled.slice(0, needed)
+
+    // 如果 topic 圖片不足，重複選擇直到填滿
+    const finalImages = []
+    for (let i = 0; i < needed; i++) {
+      finalImages.push(selected[i % selected.length])
+    }
+
+    // 更新 group 的圖片
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        return { ...g, images: finalImages }
+      }
+      return g
+    }))
+  }
+
   return {
     currentTab,
     setCurrentTab,
@@ -323,6 +356,7 @@ function useGameState() {
     addImageToTopic,
     batchAddImagesToTopic,
     deleteImageFromTopic,
+    importFromTopic,
   }
 }
 

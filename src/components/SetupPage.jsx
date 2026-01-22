@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
 
 function SetupPage({ gameState }) {
@@ -11,7 +11,11 @@ function SetupPage({ gameState }) {
     updateGroupImage,
     batchUploadImages,
     clearAllData,
+    topics,
+    importFromTopic,
   } = gameState
+
+  const [showTopicPicker, setShowTopicPicker] = useState(false)
 
   const batchInputRef = useRef(null)
   const singleInputRef = useRef(null)
@@ -97,13 +101,27 @@ function SetupPage({ gameState }) {
 
       {/* 操作按鈕 */}
       <div className="flex flex-col gap-3">
-        <button
-          onClick={() => batchInputRef.current?.click()}
-          className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2"
-        >
-          <span className="text-lg">📤</span>
-          批次上傳圖片
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => batchInputRef.current?.click()}
+            className="btn-primary flex-1 py-4 text-base flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">📤</span>
+            批次上傳
+          </button>
+          <button
+            onClick={() => setShowTopicPicker(true)}
+            disabled={topics.length === 0}
+            className={`flex-1 py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
+              topics.length === 0
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+            }`}
+          >
+            <span className="text-lg">📥</span>
+            從主題匯入
+          </button>
+        </div>
         <input
           ref={batchInputRef}
           type="file"
@@ -112,6 +130,60 @@ function SetupPage({ gameState }) {
           onChange={handleBatchUpload}
           className="hidden"
         />
+
+        {/* 主題選擇器 Modal */}
+        {showTopicPicker && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="glass-card-elevated rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold gradient-text">選擇主題</h3>
+                <button
+                  onClick={() => setShowTopicPicker(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                將從選擇的主題中隨機匯入 8 張圖片到目前的組別
+              </p>
+              <div className="flex flex-col gap-2">
+                {topics.map((topic) => (
+                  <button
+                    key={topic.id}
+                    onClick={() => {
+                      importFromTopic(currentGroupId, topic.id)
+                      setShowTopicPicker(false)
+                    }}
+                    disabled={topic.images.length === 0}
+                    className={`p-4 rounded-xl text-left transition-all duration-300 ${
+                      topic.images.length === 0
+                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : 'bg-white hover:bg-indigo-50 hover:shadow-md border border-gray-100 hover:border-indigo-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">{topic.name}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        topic.images.length === 0
+                          ? 'bg-gray-100 text-gray-400'
+                          : 'bg-indigo-100 text-indigo-600'
+                      }`}>
+                        {topic.images.length} 張
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {topics.length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                  <p>尚未建立任何主題</p>
+                  <p className="text-sm mt-1">請先到主題庫新增主題</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3 mt-4">
           {groups.length > 1 && (
