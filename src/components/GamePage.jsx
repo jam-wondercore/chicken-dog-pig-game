@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
 import useAudioPlayer from '../hooks/useAudioPlayer'
-
-// 節奏配置 - 參考三層式定時循環邏輯
-const RHYTHM_SETTINGS = {
-  FIRST_DELAY: 3100,      // 前奏延遲 (音樂開始後的前奏時間)
-  BEAT_INTERVAL: 300,     // 每拍間隔 (快節奏跳動)
-  WAIT_TIME: 2800,        // 每組等待時間 (ms)
-  TOTAL_BEATS: 8,         // 每組跳動 n 拍
-}
+import { RHYTHM_SETTINGS } from '../constants'
 
 function GamePage({ gameState }) {
   const {

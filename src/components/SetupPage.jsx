@@ -39,32 +39,6 @@ function SetupPage({ gameState }) {
     setDropPosition(null)
   }
 
-  // 處理放置區域的拖曳經過
-  const handleDropZoneDragOver = (e, position) => {
-    e.preventDefault()
-    // 不允許放在自己的前後（等於不移動）
-    if (draggedIndex !== null && position !== draggedIndex && position !== draggedIndex + 1) {
-      setDropPosition(position)
-    }
-  }
-
-  // 處理放置區域的拖曳離開
-  const handleDropZoneDragLeave = () => {
-    setDropPosition(null)
-  }
-
-  // 放下到指定位置
-  const handleDropAtPosition = (e, position) => {
-    e.preventDefault()
-    if (draggedIndex !== null && position !== draggedIndex && position !== draggedIndex + 1) {
-      // 計算實際的目標位置
-      const targetIndex = position > draggedIndex ? position - 1 : position
-      reorderGroups(draggedIndex, targetIndex)
-    }
-    setDraggedIndex(null)
-    setDropPosition(null)
-  }
-
   const handleSingleUpload = (index) => {
     currentEditIndex.current = index
     singleInputRef.current?.click()
