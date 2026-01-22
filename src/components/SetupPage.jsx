@@ -45,35 +45,42 @@ function SetupPage({ gameState }) {
   }
 
   return (
-    <div className="max-w-[500px] mx-auto px-6">
+    <div className="max-w-[520px] mx-auto px-4">
       {/* 組別標籤 */}
-      <div className="grid grid-cols-5 gap-3 mb-8">
-        {groups.map((group, index) => (
-          <button
-            key={group.id}
-            onClick={() => setCurrentGroupId(group.id)}
-            className={`py-2.5 px-2 rounded-lg font-bold text-xs transition-all duration-200 ${
-              currentGroupId === group.id
-                ? 'text-white shadow-lg transform -translate-y-1 scale-105'
-                : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:scale-102'
-            }`}
-            style={currentGroupId === group.id ? { backgroundColor: 'var(--secondary-color)' } : {}}
-          >
-            第{index + 1}組
-          </button>
-        ))}
-        {groups.length < 10 && (
-          <button
-            onClick={addGroup}
-            className="py-2.5 px-2 rounded-lg font-bold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-          >
-            + 新增
-          </button>
-        )}
+      <div className="glass-card p-3 rounded-2xl mb-6">
+        <div className="flex flex-wrap gap-2 justify-center">
+          {groups.map((group, index) => {
+            const isActive = currentGroupId === group.id
+            return (
+              <button
+                key={group.id}
+                onClick={() => setCurrentGroupId(group.id)}
+                className={`relative px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 ${
+                  isActive
+                    ? 'text-white'
+                    : 'text-gray-500 hover:text-indigo-600 bg-white/50 hover:bg-white border border-gray-200/50 hover:border-indigo-200'
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg" />
+                )}
+                <span className="relative">第{index + 1}組</span>
+              </button>
+            )
+          })}
+          {groups.length < 10 && (
+            <button
+              onClick={addGroup}
+              className="px-4 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            >
+              + 新增
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 圖片網格 */}
-      <div className="mb-8">
+      <div className="mb-6">
         <ImageGrid
           images={currentGroup.images}
           onImageClick={handleSingleUpload}
@@ -89,12 +96,12 @@ function SetupPage({ gameState }) {
       </div>
 
       {/* 操作按鈕 */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <button
           onClick={() => batchInputRef.current?.click()}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+          className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2"
         >
-          <span className="text-xl">📤</span>
+          <span className="text-lg">📤</span>
           批次上傳圖片
         </button>
         <input
@@ -106,28 +113,34 @@ function SetupPage({ gameState }) {
           className="hidden"
         />
 
-        {groups.length > 1 && (
+        <div className="flex gap-3 mt-4">
+          {groups.length > 1 && (
+            <button
+              onClick={() => deleteGroup(currentGroupId)}
+              className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
+            >
+              <span>🗑️</span>
+              刪除此組
+            </button>
+          )}
+
           <button
-            onClick={() => deleteGroup(currentGroupId)}
-            className="w-full py-3 rounded-xl bg-white hover:bg-red-50 text-red-600 font-medium text-sm border-2 border-red-200 hover:border-red-300 transition-all duration-200 flex items-center justify-center gap-2 mt-6"
+            onClick={clearAllData}
+            className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
           >
-            <span>🗑</span>
-            刪除此組
+            <span>🗑️</span>
+            清除全部
           </button>
-        )}
+        </div>
 
-        <button
-          onClick={clearAllData}
-          className="w-full py-3 rounded-xl bg-white hover:bg-red-50 text-red-500 font-medium text-sm border-2 border-red-200 hover:border-red-300 transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          <span>🗑</span>
-          清除所有組別照片
-        </button>
-
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 py-3 px-5 rounded-r-xl text-gray-800 font-medium text-sm mt-2 flex items-center gap-2">
-          <span className="text-blue-600 text-lg">✏️</span>
-          <span>
-            正在編輯第 <span className="font-bold text-blue-600 text-base">{groups.findIndex(g => g.id === currentGroupId) + 1}</span> 組
+        {/* Status Badge */}
+        <div className="status-badge justify-center mt-4 border border-indigo-100">
+          <span className="text-indigo-500">✏️</span>
+          <span className="text-gray-600">
+            正在編輯
+            <span className="font-bold text-indigo-600 mx-1">
+              第 {groups.findIndex(g => g.id === currentGroupId) + 1} 組
+            </span>
           </span>
         </div>
       </div>

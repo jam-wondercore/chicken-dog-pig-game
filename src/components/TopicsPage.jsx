@@ -71,20 +71,19 @@ function TopicsPage({ gameState }) {
     e.target.value = ''
   }
 
-  const handleDeleteImage = (e, topicId, imageIndex) => {
-    e.stopPropagation()
-    deleteImageFromTopic(topicId, imageIndex)
-  }
-
   return (
-    <div className="max-w-[600px] mx-auto px-6">
+    <div className="max-w-[600px] mx-auto px-4">
       {/* 標題列 */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-700">圖片庫</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold gradient-text">圖片庫</h2>
         {!isAddingTopic && (
           <button
             onClick={() => setIsAddingTopic(true)}
-            className="px-4 py-2 rounded-lg font-bold text-sm bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            className="px-4 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-300 hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+              boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+            }}
           >
             + 新增主題
           </button>
@@ -93,26 +92,26 @@ function TopicsPage({ gameState }) {
 
       {/* 新增主題表單 */}
       {isAddingTopic && (
-        <div className="bg-white p-4 rounded-xl shadow-md mb-4">
+        <div className="glass-card-elevated p-5 rounded-2xl mb-5">
           <input
             type="text"
             value={newTopicName}
             onChange={(e) => setNewTopicName(e.target.value)}
             placeholder="輸入主題名稱"
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg mb-3 focus:border-blue-400 focus:outline-none"
+            className="input-modern mb-4"
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
           />
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={handleAddTopic}
-              className="px-4 py-2 rounded-lg font-medium text-sm bg-blue-500 text-white hover:bg-blue-600 transition-all"
+              className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:shadow-lg transition-all duration-300"
             >
               確認
             </button>
             <button
               onClick={() => { setIsAddingTopic(false); setNewTopicName('') }}
-              className="px-4 py-2 rounded-lg font-medium text-sm bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+              className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300"
             >
               取消
             </button>
@@ -132,10 +131,12 @@ function TopicsPage({ gameState }) {
 
       {/* 主題列表 - 垂直排列 */}
       {topics.length === 0 ? (
-        <div className="bg-white p-8 rounded-xl shadow-md text-center text-gray-500">
-          <span className="text-4xl mb-3 block">📁</span>
-          <p>尚未建立任何主題</p>
-          <p className="text-sm mt-1">點擊「+ 新增主題」開始建立圖片庫</p>
+        <div className="glass-card-elevated p-10 rounded-2xl text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+            <span className="text-3xl">📁</span>
+          </div>
+          <p className="text-gray-600 font-medium mb-1">尚未建立任何主題</p>
+          <p className="text-sm text-gray-400">點擊「+ 新增主題」開始建立圖片庫</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -146,24 +147,30 @@ function TopicsPage({ gameState }) {
             return (
               <div
                 key={topic.id}
-                className={`rounded-xl overflow-hidden transition-all duration-300 ${
+                className={`rounded-2xl overflow-hidden transition-all duration-300 ${
                   isExpanded
-                    ? 'bg-white shadow-lg border-2 border-blue-400'
-                    : 'bg-white shadow-md border-2 border-gray-200 hover:border-blue-300'
+                    ? 'glass-card-elevated ring-2 ring-indigo-400/50'
+                    : 'glass-card hover:shadow-lg'
                 }`}
               >
                 {/* Topic Header */}
                 <div
                   onClick={() => !isEditing && handleToggleTopic(topic.id)}
-                  className={`p-4 cursor-pointer flex items-center justify-between transition-all duration-200 ${
-                    isExpanded ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' : 'hover:bg-gray-50'
+                  className={`p-4 cursor-pointer flex items-center justify-between transition-all duration-300 ${
+                    isExpanded
+                      ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white'
+                      : 'hover:bg-white/50'
                   }`}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {/* 展開/收合圖示 */}
-                    <span className={`text-lg transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
-                      ▶
-                    </span>
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                        isExpanded ? 'bg-white/20 rotate-90' : 'bg-gray-100'
+                      }`}
+                    >
+                      <span className={`text-xs ${isExpanded ? 'text-white' : 'text-gray-500'}`}>▶</span>
+                    </div>
 
                     {isEditing ? (
                       <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
@@ -171,28 +178,32 @@ function TopicsPage({ gameState }) {
                           type="text"
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
-                          className="flex-1 px-2 py-1 border rounded text-gray-700 text-sm"
+                          className="flex-1 px-3 py-1.5 border-0 rounded-lg text-gray-700 text-sm bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50"
                           autoFocus
                           onKeyDown={(e) => e.key === 'Enter' && handleRename(e)}
                         />
                         <button
                           onClick={handleRename}
-                          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                          className="px-3 py-1.5 text-xs bg-white/20 text-white rounded-lg hover:bg-white/30 font-medium"
                         >
                           儲存
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingTopicId(null) }}
-                          className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
+                          className="px-3 py-1.5 text-xs bg-white/10 text-white/80 rounded-lg hover:bg-white/20 font-medium"
                         >
                           取消
                         </button>
                       </div>
                     ) : (
                       <>
-                        <div className="font-bold truncate">{topic.name}</div>
-                        <div className={`text-sm ${isExpanded ? 'text-white/80' : 'text-gray-500'}`}>
-                          ({topic.images.length} 張)
+                        <div className="font-semibold truncate">{topic.name}</div>
+                        <div
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            isExpanded ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          {topic.images.length} 張
                         </div>
                       </>
                     )}
@@ -203,17 +214,17 @@ function TopicsPage({ gameState }) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => handleUploadClick(e, topic.id)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
                           isExpanded
                             ? 'bg-white/20 hover:bg-white/30 text-white'
-                            : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'
                         }`}
                       >
                         上傳
                       </button>
                       <button
                         onClick={(e) => handleStartRename(e, topic)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
                           isExpanded
                             ? 'bg-white/20 hover:bg-white/30 text-white'
                             : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
@@ -223,10 +234,10 @@ function TopicsPage({ gameState }) {
                       </button>
                       <button
                         onClick={(e) => handleDeleteTopic(e, topic.id)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
                           isExpanded
-                            ? 'bg-red-400/80 hover:bg-red-400 text-white'
-                            : 'bg-red-100 hover:bg-red-200 text-red-600'
+                            ? 'bg-rose-400/80 hover:bg-rose-400 text-white'
+                            : 'bg-rose-50 hover:bg-rose-100 text-rose-600'
                         }`}
                       >
                         刪除
@@ -237,23 +248,25 @@ function TopicsPage({ gameState }) {
 
                 {/* Topic Images - 展開時顯示 */}
                 {isExpanded && (
-                  <div className="p-4 border-t border-gray-100">
+                  <div className="p-4 bg-white/50">
                     {topic.images.length === 0 ? (
-                      <div className="text-center text-gray-500 py-6">
-                        <span className="text-3xl mb-2 block">🖼️</span>
-                        <p className="text-sm">此主題尚未有圖片</p>
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+                          <span className="text-2xl">🖼️</span>
+                        </div>
+                        <p className="text-sm text-gray-400">此主題尚未有圖片</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-4 gap-3">
                         {topic.images.map((image, index) => (
                           <div
                             key={`${topic.id}-${index}-${image.substring(0, 50)}`}
-                            className="relative aspect-square rounded-lg overflow-hidden shadow-sm group cursor-pointer"
+                            className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer border-2 border-gray-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                           >
                             <img
                               src={image}
                               alt={`圖片 ${index + 1}`}
-                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
                             {/* 刪除按鈕 */}
                             <button
@@ -262,7 +275,7 @@ function TopicsPage({ gameState }) {
                                 e.preventDefault()
                                 deleteImageFromTopic(topic.id, index)
                               }}
-                              className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors text-sm shadow-md"
+                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-500 transition-all duration-200 text-xs"
                             >
                               ✕
                             </button>
