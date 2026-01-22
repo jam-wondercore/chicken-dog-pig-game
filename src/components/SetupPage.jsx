@@ -11,7 +11,6 @@ function SetupPage({ gameState }) {
     updateGroupImage,
     batchUploadImages,
     clearAllData,
-    startGame,
   } = gameState
 
   const batchInputRef = useRef(null)
@@ -44,10 +43,6 @@ function SetupPage({ gameState }) {
     }
     e.target.value = ''
   }
-
-  const canStartGame = groups.some(group =>
-    group.images.some(img => img !== null)
-  )
 
   return (
     <div className="max-w-[500px] mx-auto px-6">
@@ -110,19 +105,6 @@ function SetupPage({ gameState }) {
           onChange={handleBatchUpload}
           className="hidden"
         />
-
-        <button
-          onClick={startGame}
-          disabled={!canStartGame}
-          className={`w-full py-4 rounded-xl font-bold text-base shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${
-            canStartGame
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          <span className="text-xl">▶</span>
-          開始遊戲
-        </button>
 
         {groups.length > 1 && (
           <button

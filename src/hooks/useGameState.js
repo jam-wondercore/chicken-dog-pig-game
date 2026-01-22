@@ -103,8 +103,10 @@ function useGameState() {
     setGameState('paused')
   }
 
-  // 繼續遊戲
+  // 開始/重新開始遊戲
   const resumeGame = () => {
+    setCurrentGroupIndex(0)
+    setCurrentBeatIndex(0)
     setGameState('playing')
   }
 
