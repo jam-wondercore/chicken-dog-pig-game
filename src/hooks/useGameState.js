@@ -1,4 +1,83 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+const STORAGE_KEY = 'chicken-dog-pig-topics'
+
+// 壓縮圖片的函數
+const compressImage = (dataUrl, quality = 0.5, maxWidth = 500) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let width = img.width
+      let height = img.height
+
+      // 如果圖片太大，縮小尺寸
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width
+        width = maxWidth
+      }
+
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // 使用 JPEG 格式壓縮
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = dataUrl
+  })
+}
+
+// 嘗試儲存到 localStorage，如果空間不足則壓縮圖片
+const saveToLocalStorage = async (topics) => {
+  const data = JSON.stringify(topics)
+
+  try {
+    localStorage.setItem(STORAGE_KEY, data)
+    return true
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      console.warn('localStorage 空間不足，嘗試壓縮圖片...')
+
+      // 壓縮所有圖片
+      const compressedTopics = await Promise.all(
+        topics.map(async (topic) => ({
+          ...topic,
+          images: await Promise.all(
+            topic.images.map((img) => compressImage(img, 0.3, 400))
+          ),
+        }))
+      )
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(compressedTopics))
+        console.log('壓縮後儲存成功')
+        return true
+      } catch (e2) {
+        console.error('即使壓縮後仍無法儲存:', e2)
+        alert('儲存空間不足，部分圖片可能無法保存。請刪除一些圖片後重試。')
+        return false
+      }
+    }
+    console.error('儲存失敗:', e)
+    return false
+  }
+}
+
+// 從 localStorage 讀取資料
+const loadFromLocalStorage = () => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY)
+    if (data) {
+      return JSON.parse(data)
+    }
+  } catch (e) {
+    console.error('讀取 localStorage 失敗:', e)
+  }
+  return []
+}
 
 function useGameState() {
   const [currentTab, setCurrentTab] = useState('setup')
@@ -14,9 +93,19 @@ function useGameState() {
   const [currentBeatIndex, setCurrentBeatIndex] = useState(0)
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0)
 
-  // Topics 圖片庫
-  const [topics, setTopics] = useState([])
+  // Topics 主題庫
+  const [topics, setTopics] = useState(() => loadFromLocalStorage())
   const [currentTopicId, setCurrentTopicId] = useState(null)
+
+  // 當 topics 改變時，儲存到 localStorage
+  useEffect(() => {
+    if (topics.length > 0) {
+      saveToLocalStorage(topics)
+    } else {
+      // 如果 topics 為空，清除 localStorage
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [topics])
 
   // 獲取當前組別
   const getCurrentGroup = () => {
@@ -122,7 +211,7 @@ function useGameState() {
     setCurrentGroupIndex(0)
   }
 
-  // ========== Topics 圖片庫相關方法 ==========
+  // ========== Topics 主題庫相關方法 ==========
 
   // 獲取當前 Topic
   const getCurrentTopic = () => {
@@ -171,15 +260,17 @@ function useGameState() {
     }))
   }
 
-  // 批次新增圖片到 Topic
-  const batchAddImagesToTopic = (topicId, files) => {
-    Array.from(files).forEach((file) => {
+  // 批次新增圖片到 Topic（上傳時壓縮）
+  const batchAddImagesToTopic = async (topicId, files) => {
+    for (const file of Array.from(files)) {
       const reader = new FileReader()
-      reader.onload = (e) => {
-        addImageToTopic(topicId, e.target.result)
+      reader.onload = async (e) => {
+        // 上傳時先壓縮圖片以節省空間
+        const compressed = await compressImage(e.target.result, 0.5, 500)
+        addImageToTopic(topicId, compressed)
       }
       reader.readAsDataURL(file)
-    })
+    }
   }
 
   // 從 Topic 刪除圖片

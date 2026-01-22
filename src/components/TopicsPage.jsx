@@ -75,7 +75,7 @@ function TopicsPage({ gameState }) {
     <div className="max-w-[600px] mx-auto px-4">
       {/* 標題列 */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold gradient-text">圖片庫</h2>
+        <h2 className="text-xl font-bold gradient-text">主題庫</h2>
         {!isAddingTopic && (
           <button
             onClick={() => setIsAddingTopic(true)}
@@ -136,7 +136,7 @@ function TopicsPage({ gameState }) {
             <span className="text-3xl">📁</span>
           </div>
           <p className="text-gray-600 font-medium mb-1">尚未建立任何主題</p>
-          <p className="text-sm text-gray-400">點擊「+ 新增主題」開始建立圖片庫</p>
+          <p className="text-sm text-gray-400">點擊「+ 新增主題」開始建立主題庫</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
