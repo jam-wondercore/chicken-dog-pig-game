@@ -14,14 +14,55 @@ function SetupPage({ gameState }) {
     importFromTopic,
     shuffleGroup,
     shuffleAllGroups,
+    reorderGroups,
   } = gameState
 
   const [showTopicPicker, setShowTopicPicker] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState(null)
+  const [dropPosition, setDropPosition] = useState(null) // 插入位置 (0 到 groups.length)
 
   const singleInputRef = useRef(null)
   const currentEditIndex = useRef(null)
 
   const currentGroup = groups.find(g => g.id === currentGroupId) || groups[0]
+
+  // 拖曳開始
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  // 拖曳結束
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDropPosition(null)
+  }
+
+  // 處理放置區域的拖曳經過
+  const handleDropZoneDragOver = (e, position) => {
+    e.preventDefault()
+    // 不允許放在自己的前後（等於不移動）
+    if (draggedIndex !== null && position !== draggedIndex && position !== draggedIndex + 1) {
+      setDropPosition(position)
+    }
+  }
+
+  // 處理放置區域的拖曳離開
+  const handleDropZoneDragLeave = () => {
+    setDropPosition(null)
+  }
+
+  // 放下到指定位置
+  const handleDropAtPosition = (e, position) => {
+    e.preventDefault()
+    if (draggedIndex !== null && position !== draggedIndex && position !== draggedIndex + 1) {
+      // 計算實際的目標位置
+      const targetIndex = position > draggedIndex ? position - 1 : position
+      reorderGroups(draggedIndex, targetIndex)
+    }
+    setDraggedIndex(null)
+    setDropPosition(null)
+  }
 
   const handleSingleUpload = (index) => {
     currentEditIndex.current = index
@@ -44,30 +85,76 @@ function SetupPage({ gameState }) {
     <div className="max-w-[520px] mx-auto px-4">
       {/* 組別標籤 */}
       <div className="glass-card p-3 rounded-2xl mb-6">
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap justify-center items-center">
           {groups.map((group, index) => {
             const isActive = currentGroupId === group.id
+            const isDragging = draggedIndex === index
+            const showDropBefore = dropPosition === index
+            const showDropAfter = dropPosition === index + 1
             return (
-              <button
-                key={group.id}
-                onClick={() => setCurrentGroupId(group.id)}
-                className={`relative px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 ${
-                  isActive
-                    ? 'text-white'
-                    : 'text-gray-500 hover:text-indigo-600 bg-white/50 hover:bg-white border border-gray-200/50 hover:border-indigo-200'
-                }`}
-              >
-                {isActive && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg" />
-                )}
-                <span className="relative">第{index + 1}組</span>
-              </button>
+              <div key={group.id} className="relative">
+                {/* 左側插入指示線 */}
+                <div
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedIndex !== null && showDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <button
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const relativeX = (e.clientX - rect.left) / rect.width
+                    // 左側 40% 觸發前方插入，右側 40% 觸發後方插入
+                    let pos = null
+                    if (relativeX < 0.4) {
+                      pos = index
+                    } else if (relativeX > 0.6) {
+                      pos = index + 1
+                    }
+                    if (pos !== null && draggedIndex !== null && pos !== draggedIndex && pos !== draggedIndex + 1) {
+                      setDropPosition(pos)
+                    } else {
+                      setDropPosition(null)
+                    }
+                  }}
+                  onDragLeave={() => setDropPosition(null)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    if (dropPosition !== null && draggedIndex !== null) {
+                      const targetIndex = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition
+                      reorderGroups(draggedIndex, targetIndex)
+                    }
+                    setDraggedIndex(null)
+                    setDropPosition(null)
+                  }}
+                  onClick={() => setCurrentGroupId(group.id)}
+                  className={`relative px-4 py-2 mx-1.5 rounded-xl font-semibold text-xs transition-all duration-300 cursor-grab active:cursor-grabbing ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-500 hover:text-indigo-600 bg-white/50 hover:bg-white border border-gray-200/50 hover:border-indigo-200'
+                  } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                >
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg" />
+                  )}
+                  <span className="relative">第{index + 1}組</span>
+                </button>
+                {/* 右側插入指示線 */}
+                <div
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedIndex !== null && showDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
+              </div>
             )
           })}
           {groups.length < 10 && (
             <button
               onClick={addGroup}
-              className="px-4 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              className="px-4 py-2 ml-1 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
             >
               + 新增
             </button>

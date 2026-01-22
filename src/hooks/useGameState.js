@@ -292,6 +292,16 @@ function useGameState() {
     })
   }
 
+  // 調換組別順序
+  const reorderGroups = (fromIndex, toIndex) => {
+    setGroups(prev => {
+      const newGroups = [...prev]
+      const [removed] = newGroups.splice(fromIndex, 1)
+      newGroups.splice(toIndex, 0, removed)
+      return newGroups
+    })
+  }
+
   // 打亂單一組別的圖片順序
   const shuffleGroup = (groupId) => {
     setGroups(prev => prev.map(g => {
@@ -379,6 +389,7 @@ function useGameState() {
     importFromTopic,
     shuffleGroup,
     shuffleAllGroups,
+    reorderGroups,
   }
 }
 
