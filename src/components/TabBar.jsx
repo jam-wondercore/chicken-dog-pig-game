@@ -12,7 +12,7 @@ function TabBar({ currentTab, onTabChange }) {
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
-          className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+          className={`relative px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 sm:gap-2 ${
             currentTab === tab.id
               ? 'text-white'
               : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
@@ -30,7 +30,7 @@ function TabBar({ currentTab, onTabChange }) {
           <span className={`relative text-base ${currentTab === tab.id ? 'animate-pulse-soft' : ''}`}>
             {tab.icon}
           </span>
-          <span className="relative">{tab.label}</span>
+          <span className="relative hidden sm:inline">{tab.label}</span>
         </button>
       ))}
     </div>
