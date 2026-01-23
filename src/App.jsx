@@ -18,7 +18,7 @@ function App() {
         <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-indigo-300/30 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto py-8 px-4 md:py-12 md:px-6">
+      <div className="container mx-auto py-8 px-2 md:py-12 md:px-6">
         {/* 標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-5xl font-extrabold gradient-text tracking-tight mb-3">

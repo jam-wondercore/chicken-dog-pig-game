@@ -195,7 +195,7 @@ function GamePage({ gameState }) {
   const showStopButton = gamePhase === GAME_PHASES.READY || gamePhase === GAME_PHASES.PLAYING
 
   return (
-    <div className="max-w-256 mx-auto px-4">
+    <div className="max-w-256 mx-auto px-1 sm:px-4">
       {/* Game Status Card - 置中顯示在 board 上方 */}
       <div className="flex justify-center mb-4">
         <div className="glass-card px-3 py-2 sm:px-5 sm:py-3 rounded-2xl flex items-center gap-2 sm:gap-4">

@@ -6,9 +6,9 @@
  */
 function GameIntroScreen() {
   return (
-    <div className="glass-card-elevated relative w-full max-w-256 mx-auto p-2 sm:p-4 rounded-2xl">
+    <div className="glass-card-elevated relative w-full max-w-256 mx-auto p-1.5 sm:p-4 rounded-xl sm:rounded-2xl">
       {/* 隱藏的 grid 結構，用於撐出與 ImageGrid 相同的高度 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-5 invisible">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-5 invisible">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="aspect-square" />
         ))}
