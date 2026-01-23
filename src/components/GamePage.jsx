@@ -244,43 +244,41 @@ function GamePage({ gameState }) {
               />
             ))}
           </div>
+
+          {/* Control Buttons */}
+          {showStopButton && (
+            <button
+              onClick={handleStopGame}
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
+              style={{
+                background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+                boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)',
+              }}
+              title="結束遊戲"
+            >
+              <span className="text-lg">⏹</span>
+            </button>
+          )}
+
+          {showPlayButton && (
+            <button
+              onClick={resumeGame}
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.4)',
+              }}
+              title="開始遊戲"
+            >
+              <span className="text-lg">▶️</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* 遊戲畫面 - 根據階段顯示對應內容 */}
-      <div className="mb-6 h-117.5">
+      <div>
         {renderGameContent()}
-      </div>
-
-      {/* 操作按鈕 */}
-      <div className="flex flex-col gap-4">
-        {showStopButton && (
-          <button
-            onClick={handleStopGame}
-            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
-            style={{
-              background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
-              boxShadow: '0 4px 20px rgba(244, 63, 94, 0.4)',
-            }}
-          >
-            <span className="text-xl">⏹</span>
-            結束遊戲
-          </button>
-        )}
-
-        {showPlayButton && (
-          <button
-            onClick={resumeGame}
-            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
-            }}
-          >
-            <span className="text-xl">▶️</span>
-            開始遊戲
-          </button>
-        )}
       </div>
     </div>
   )
