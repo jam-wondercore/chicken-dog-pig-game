@@ -63,4 +63,4 @@ export const TABS = {
 export const DEFAULT_GROUP_SIZE = 8
 
 // 最大群組數量
-export const MAX_GROUPS = 10
+export const MAX_GROUPS = 96
