@@ -14,7 +14,7 @@ import {
   needsGroupsMigration,
 } from '../utils/migrations'
 import { fisherYatesShuffle, randomPickWithRepeat } from '../utils/shuffle'
-import { TABS, GAME_STATES, DEFAULT_GROUP_SIZE, MAX_GROUPS } from '../constants'
+import { TABS, GAME_PHASES, DEFAULT_GROUP_SIZE, MAX_GROUPS } from '../constants'
 
 function useGameState() {
   // ========== 基礎狀態 ==========
@@ -26,9 +26,11 @@ function useGameState() {
   })
 
   // ========== 遊戲狀態 ==========
-  const [gameState, setGameState] = useState(GAME_STATES.IDLE)
+  const [gamePhase, setGamePhase] = useState(GAME_PHASES.STOPPED)
   const [currentBeatIndex, setCurrentBeatIndex] = useState(0)
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0)
+  // 重置觸發器 - 每次遞增都會觸發完整重置
+  const [resetTrigger, setResetTrigger] = useState(0)
 
   // ========== Topics 主題庫狀態 ==========
   const [topics, setTopics] = useState(() => loadTopicsFromStorage())
@@ -344,28 +346,52 @@ function useGameState() {
   }, [topics, groups])
 
   // ========== 遊戲控制 ==========
-  const startGame = useCallback(() => {
+  // 核心重置函數 - 所有重置操作都使用這個
+  const resetGame = useCallback(() => {
+    console.log('[useGameState] resetGame 被呼叫')
+    setGamePhase(GAME_PHASES.STOPPED)
     setCurrentGroupIndex(0)
-    setCurrentBeatIndex(0)
-    setGameState(GAME_STATES.PLAYING)
+    setCurrentBeatIndex(-1)
+    setResetTrigger(prev => prev + 1)
+  }, [])
+
+  const startGame = useCallback(() => {
+    console.log('[useGameState] startGame 被呼叫')
+    setCurrentGroupIndex(0)
+    setCurrentBeatIndex(-1)
+    setResetTrigger(prev => prev + 1)
+    setGamePhase(GAME_PHASES.READY)
     setCurrentTab(TABS.GAME)
   }, [])
 
-  const pauseGame = useCallback(() => {
-    setGameState(GAME_STATES.PAUSED)
+  // 進入遊戲進行階段（前奏結束後呼叫）
+  const enterPlayingPhase = useCallback(() => {
+    console.log('[useGameState] enterPlayingPhase 被呼叫')
+    setGamePhase(GAME_PHASES.PLAYING)
   }, [])
 
+  // 進入結束階段
+  const enterEndedPhase = useCallback(() => {
+    console.log('[useGameState] enterEndedPhase 被呼叫')
+    setGamePhase(GAME_PHASES.ENDED)
+  }, [])
+
+  // resumeGame 完整重置並從頭開始
   const resumeGame = useCallback(() => {
+    console.log('[useGameState] resumeGame 被呼叫')
     setCurrentGroupIndex(0)
-    setCurrentBeatIndex(0)
-    setGameState(GAME_STATES.PLAYING)
+    setCurrentBeatIndex(-1)
+    setResetTrigger(prev => prev + 1)
+    setGamePhase(GAME_PHASES.READY)
   }, [])
 
   const backToSetup = useCallback(() => {
-    setGameState(GAME_STATES.IDLE)
+    console.log('[useGameState] backToSetup 被呼叫')
+    setGamePhase(GAME_PHASES.STOPPED)
     setCurrentTab(TABS.SETUP)
-    setCurrentBeatIndex(0)
+    setCurrentBeatIndex(-1)
     setCurrentGroupIndex(0)
+    setResetTrigger(prev => prev + 1)
   }, [])
 
   // ========== 資料管理 ==========
@@ -373,7 +399,7 @@ function useGameState() {
     if (confirm('確定要清除所有組別與圖片資料嗎？')) {
       setGroups(getDefaultGroups())
       setCurrentGroupId('group-1')
-      setGameState(GAME_STATES.IDLE)
+      setGamePhase(GAME_PHASES.STOPPED)
       setCurrentTab(TABS.SETUP)
       setTimeout(() => runGarbageCollection(), 100)
     }
@@ -414,15 +440,18 @@ function useGameState() {
     importFromTopic,
 
     // 遊戲控制
-    gameState,
+    gamePhase,
     currentBeatIndex,
     setCurrentBeatIndex,
     currentGroupIndex,
     setCurrentGroupIndex,
+    resetTrigger,
+    resetGame,
     startGame,
-    pauseGame,
     resumeGame,
     backToSetup,
+    enterPlayingPhase,
+    enterEndedPhase,
 
     // 資料管理
     clearAllData,

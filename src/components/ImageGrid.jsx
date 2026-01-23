@@ -1,4 +1,6 @@
-function ImageGrid({ images, onImageClick, activeIndex = -1, mode = 'setup' }) {
+import { GRID_MODES } from '../constants'
+
+function ImageGrid({ images, onImageClick, activeIndex = -1, mode = GRID_MODES.SETUP }) {
   return (
     <div className="glass-card-elevated grid grid-cols-4 gap-3 w-full max-w-[480px] mx-auto p-4 rounded-2xl">
       {images.map((image, index) => {
@@ -6,14 +8,14 @@ function ImageGrid({ images, onImageClick, activeIndex = -1, mode = 'setup' }) {
         return (
           <div
             key={index}
-            onClick={() => mode === 'setup' && onImageClick && onImageClick(index)}
+            onClick={() => mode === GRID_MODES.SETUP && onImageClick && onImageClick(index)}
             className={`
               relative aspect-square rounded-xl overflow-hidden group
-              ${mode === 'setup' ? 'cursor-pointer' : ''}
+              ${mode === GRID_MODES.SETUP ? 'cursor-pointer' : ''}
               ${isActive ? 'z-10 image-active' : ''}
               transition-all duration-300 ease-out
               ${!isActive ? 'border-2 border-gray-200/60' : ''}
-              ${mode === 'setup' && !isActive ? 'hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1' : ''}
+              ${mode === GRID_MODES.SETUP && !isActive ? 'hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1' : ''}
             `}
           >
             {/* Active Glow Ring */}
@@ -27,27 +29,27 @@ function ImageGrid({ images, onImageClick, activeIndex = -1, mode = 'setup' }) {
                   src={image}
                   alt={`圖片 ${index + 1}`}
                   className={`w-full h-full object-cover transition-transform duration-300 ease-out ${
-                    mode === 'setup' ? 'group-hover:scale-110' : ''
+                    mode === GRID_MODES.SETUP ? 'group-hover:scale-110' : ''
                   } ${isActive ? 'scale-100' : ''}`}
                 />
               ) : (
                 <div
                   className={`w-full h-full flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${
-                    mode === 'setup'
+                    mode === GRID_MODES.SETUP
                       ? 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-indigo-50 group-hover:to-purple-50'
                       : 'bg-gradient-to-br from-gray-50 to-gray-100'
                   }`}
                 >
                   <span
                     className={`text-2xl transition-all duration-300 ${
-                      mode === 'setup' ? 'group-hover:scale-125 group-hover:rotate-12' : ''
+                      mode === GRID_MODES.SETUP ? 'group-hover:scale-125 group-hover:rotate-12' : ''
                     }`}
                   >
                     📷
                   </span>
                   <span
                     className={`text-[10px] font-bold transition-colors duration-300 ${
-                      mode === 'setup' ? 'text-gray-300 group-hover:text-indigo-500' : 'text-gray-300'
+                      mode === GRID_MODES.SETUP ? 'text-gray-300 group-hover:text-indigo-500' : 'text-gray-300'
                     }`}
                   >
                     {index + 1}

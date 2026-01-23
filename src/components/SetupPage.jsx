@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
+import { GRID_MODES } from '../constants'
 
 function SetupPage({ gameState }) {
   const {
@@ -142,7 +143,7 @@ function SetupPage({ gameState }) {
         <ImageGrid
           images={currentGroupImages}
           onImageClick={handleSingleUpload}
-          mode="setup"
+          mode={GRID_MODES.SETUP}
         />
         <input
           ref={singleInputRef}
