@@ -135,11 +135,14 @@ function useGameState() {
       return
     }
 
+    const deletedIndex = groups.findIndex(g => g.id === groupId)
     const filtered = groups.filter(g => g.id !== groupId)
     setGroups(filtered)
 
     if (currentGroupId === groupId) {
-      setCurrentGroupId(filtered[0].id)
+      // 選擇同一個 index，如果刪除的是最後一組則選前一組
+      const nextIndex = Math.min(deletedIndex, filtered.length - 1)
+      setCurrentGroupId(filtered[nextIndex].id)
     }
   }, [groups, currentGroupId])
 
