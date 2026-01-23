@@ -206,44 +206,10 @@ function GamePage({ gameState }) {
   const showStopButton = gamePhase === GAME_PHASES.READY || gamePhase === GAME_PHASES.PLAYING
 
   return (
-    <div className="max-w-135 mx-auto px-4">
-      {/* 遊戲畫面 - 根據階段顯示對應內容 */}
-      <div className="mb-6">
-        {renderGameContent()}
-      </div>
-
-      {/* 操作按鈕 */}
-      <div className="flex flex-col gap-4">
-        {showStopButton && (
-          <button
-            onClick={handleStopGame}
-            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
-            style={{
-              background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
-              boxShadow: '0 4px 20px rgba(244, 63, 94, 0.4)',
-            }}
-          >
-            <span className="text-xl">⏹</span>
-            結束遊戲
-          </button>
-        )}
-
-        {showPlayButton && (
-          <button
-            onClick={resumeGame}
-            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
-            }}
-          >
-            <span className="text-xl">▶️</span>
-            開始遊戲
-          </button>
-        )}
-
-        {/* Game Status Card */}
-        <div className="glass-card p-4 rounded-2xl flex items-center justify-between">
+    <div className="max-w-256 mx-auto px-4">
+      {/* Game Status Card - 置中顯示在 board 上方 */}
+      <div className="flex justify-center mb-4">
+        <div className="glass-card px-5 py-3 rounded-2xl flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -290,6 +256,42 @@ function GamePage({ gameState }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* 遊戲畫面 - 根據階段顯示對應內容 */}
+      <div className="mb-6 h-117.5">
+        {renderGameContent()}
+      </div>
+
+      {/* 操作按鈕 */}
+      <div className="flex flex-col gap-4">
+        {showStopButton && (
+          <button
+            onClick={handleStopGame}
+            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
+            style={{
+              background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+              boxShadow: '0 4px 20px rgba(244, 63, 94, 0.4)',
+            }}
+          >
+            <span className="text-xl">⏹</span>
+            結束遊戲
+          </button>
+        )}
+
+        {showPlayButton && (
+          <button
+            onClick={resumeGame}
+            className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-white"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+            }}
+          >
+            <span className="text-xl">▶️</span>
+            開始遊戲
+          </button>
+        )}
       </div>
     </div>
   )
