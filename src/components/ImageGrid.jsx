@@ -2,7 +2,7 @@ import { GRID_MODES } from '../constants'
 
 function ImageGrid({ images, onImageClick, activeIndex = -1, mode = GRID_MODES.SETUP }) {
   return (
-    <div className="glass-card-elevated grid grid-cols-4 gap-3 w-full max-w-[480px] mx-auto p-4 rounded-2xl">
+    <div className="glass-card-elevated grid grid-cols-4 gap-3 w-full max-w-135 mx-auto p-4 rounded-2xl">
       {images.map((image, index) => {
         const isActive = activeIndex === index
         return (

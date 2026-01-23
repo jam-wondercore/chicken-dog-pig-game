@@ -73,7 +73,7 @@ function TopicsPage({ gameState }) {
   }
 
   return (
-    <div className="max-w-[600px] mx-auto px-4">
+    <div className="max-w-135 mx-auto px-4">
       {/* 標題列 */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold gradient-text">主題庫</h2>

@@ -206,7 +206,7 @@ function GamePage({ gameState }) {
   const showStopButton = gamePhase === GAME_PHASES.READY || gamePhase === GAME_PHASES.PLAYING
 
   return (
-    <div className="max-w-[520px] mx-auto px-4">
+    <div className="max-w-135 mx-auto px-4">
       {/* 遊戲畫面 - 根據階段顯示對應內容 */}
       <div className="mb-6">
         {renderGameContent()}
