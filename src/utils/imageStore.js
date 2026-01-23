@@ -1,7 +1,21 @@
 // 圖片儲存管理模組
 // 所有圖片統一存在 localStorage，使用 imageId 作為 key
 
+import { IMAGE_SETTINGS } from '../constants'
+
 const IMAGE_STORAGE_KEY = 'chicken-dog-pig-images'
+
+// 驗證檔案格式和大小
+export const validateImageFile = (file) => {
+  if (!IMAGE_SETTINGS.ALLOWED_TYPES.includes(file.type)) {
+    return { valid: false, error: `不支援的圖片格式：${file.type}` }
+  }
+  if (file.size > IMAGE_SETTINGS.MAX_FILE_SIZE) {
+    const maxMB = IMAGE_SETTINGS.MAX_FILE_SIZE / (1024 * 1024)
+    return { valid: false, error: `圖片大小超過 ${maxMB}MB 限制` }
+  }
+  return { valid: true }
+}
 
 // 壓縮圖片
 export const compressImage = (dataUrl, quality = 0.5, maxWidth = 500) => {
@@ -79,6 +93,12 @@ export const saveImages = async (files, quality = 0.5, maxWidth = 500) => {
   const images = loadAllImages()
 
   for (const file of Array.from(files)) {
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      console.warn(`跳過檔案 ${file.name}：${validation.error}`)
+      continue
+    }
+
     const dataUrl = await readFileAsDataUrl(file)
     const compressed = await compressImage(dataUrl, quality, maxWidth)
     const imageId = generateImageId()

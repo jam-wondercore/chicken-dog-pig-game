@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { saveImage, saveImages, getImages, cleanupUnusedImages } from '../utils/imageStore'
+import { saveImage, saveImages, getImages, cleanupUnusedImages, validateImageFile } from '../utils/imageStore'
 import {
   loadTopicsFromStorage,
   saveTopicsToStorage,
@@ -150,6 +150,12 @@ function useGameState() {
     let imageId = fileOrImageId
 
     if (fileOrImageId instanceof File) {
+      const validation = validateImageFile(fileOrImageId)
+      if (!validation.valid) {
+        console.warn(`跳過檔案：${validation.error}`)
+        return
+      }
+
       const reader = new FileReader()
       const dataUrl = await new Promise((resolve, reject) => {
         reader.onload = (e) => resolve(e.target.result)
