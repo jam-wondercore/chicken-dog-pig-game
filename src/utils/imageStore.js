@@ -59,6 +59,14 @@ export const loadAllImages = () => {
   return {}
 }
 
+// 查找已存在的相同圖片
+const findExistingImage = (images, dataUrl) => {
+  for (const [id, data] of Object.entries(images)) {
+    if (data === dataUrl) return id
+  }
+  return null
+}
+
 // 儲存所有圖片資料
 const saveAllImages = (images) => {
   try {
@@ -73,12 +81,16 @@ const saveAllImages = (images) => {
   }
 }
 
-// 儲存單張圖片（先壓縮）
+// 儲存單張圖片（先壓縮，若已存在則返回現有 ID）
 export const saveImage = async (dataUrl, quality = 0.5, maxWidth = 500) => {
   const compressed = await compressImage(dataUrl, quality, maxWidth)
-  const imageId = generateImageId()
-
   const images = loadAllImages()
+
+  // 檢查是否已存在相同圖片
+  const existingId = findExistingImage(images, compressed)
+  if (existingId) return existingId
+
+  const imageId = generateImageId()
   images[imageId] = compressed
 
   if (saveAllImages(images)) {
@@ -87,7 +99,7 @@ export const saveImage = async (dataUrl, quality = 0.5, maxWidth = 500) => {
   return null
 }
 
-// 批次儲存圖片
+// 批次儲存圖片（若已存在則返回現有 ID）
 export const saveImages = async (files, quality = 0.5, maxWidth = 500) => {
   const imageIds = []
   const images = loadAllImages()
@@ -101,6 +113,14 @@ export const saveImages = async (files, quality = 0.5, maxWidth = 500) => {
 
     const dataUrl = await readFileAsDataUrl(file)
     const compressed = await compressImage(dataUrl, quality, maxWidth)
+
+    // 檢查是否已存在相同圖片
+    const existingId = findExistingImage(images, compressed)
+    if (existingId) {
+      imageIds.push(existingId)
+      continue
+    }
+
     const imageId = generateImageId()
     images[imageId] = compressed
     imageIds.push(imageId)
