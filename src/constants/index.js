@@ -24,6 +24,8 @@ export const AUDIO_FILES = {
 export const IMAGE_SETTINGS = {
   QUALITY: 0.5,           // 壓縮品質
   MAX_WIDTH: 500,         // 最大寬度
+  MAX_FILE_SIZE: 10 * 1024 * 1024,  // 單張最大 10MB
+  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 }
 
 // 儲存空間設定
