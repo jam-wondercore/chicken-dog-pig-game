@@ -4,7 +4,7 @@
  */
 function GameEndScreen({ groupCount, onReplay, onBackToSetup }) {
   return (
-    <div className="glass-card-elevated w-full max-w-[480px] mx-auto p-8 rounded-2xl">
+    <div className="glass-card-elevated w-full max-w-135 mx-auto p-8 rounded-2xl">
       <div className="flex flex-col items-center justify-center py-8">
         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-6 animate-float">
           <span className="text-5xl">🎉</span>

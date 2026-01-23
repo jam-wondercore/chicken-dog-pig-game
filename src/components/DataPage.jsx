@@ -184,7 +184,7 @@ function DataPage({ gameState }) {
   }
 
   return (
-    <div className="max-w-[520px] mx-auto px-4">
+    <div className="max-w-135 mx-auto px-4">
       {/* 儲存空間使用量 */}
       <div className="glass-card-elevated p-5 rounded-2xl mb-6">
         <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
