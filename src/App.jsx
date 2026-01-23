@@ -39,10 +39,10 @@ function App() {
 
         {/* 內容區域 */}
         <div className="transition-all duration-300 ease-out">
+          {gameState.currentTab === 'data' && <DataPage gameState={gameState} />}
+          {gameState.currentTab === 'topics' && <TopicsPage gameState={gameState} />}
           {gameState.currentTab === 'setup' && <SetupPage gameState={gameState} />}
           {gameState.currentTab === 'game' && <GamePage gameState={gameState} />}
-          {gameState.currentTab === 'topics' && <TopicsPage gameState={gameState} />}
-          {gameState.currentTab === 'data' && <DataPage gameState={gameState} />}
         </div>
       </div>
     </div>
