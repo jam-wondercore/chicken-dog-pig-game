@@ -178,12 +178,12 @@ function DataPage({ gameState }) {
   return (
     <div className="max-w-135 mx-auto px-4">
       {/* 儲存空間使用量 */}
-      <div className="glass-card-elevated p-5 rounded-2xl mb-6">
-        <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+      <div className="glass-card-elevated p-4 sm:p-5 rounded-2xl mb-4 sm:mb-6">
+        <h3 className="font-bold text-gray-700 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
           <span>📊</span> 儲存空間
         </h3>
         <div className="mb-3">
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-xs sm:text-sm mb-1">
             <span className="text-gray-500">已使用</span>
             <span className="font-semibold text-gray-700">
               {formatSize(storageUsed)} / {formatSize(STORAGE_CONFIG.MAX_SIZE)}
@@ -202,46 +202,46 @@ function DataPage({ gameState }) {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="bg-white/50 p-3 rounded-xl">
-            <div className="text-gray-400 text-xs">圖片數量</div>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+          <div className="bg-white/50 p-2.5 sm:p-3 rounded-xl">
+            <div className="text-gray-400 text-[10px] sm:text-xs">圖片數量</div>
             <div className="font-bold text-gray-700">{imageCount} 張</div>
           </div>
-          <div className="bg-white/50 p-3 rounded-xl">
-            <div className="text-gray-400 text-xs">組別數量</div>
+          <div className="bg-white/50 p-2.5 sm:p-3 rounded-xl">
+            <div className="text-gray-400 text-[10px] sm:text-xs">組別數量</div>
             <div className="font-bold text-gray-700">{groupCount} 組</div>
           </div>
-          <div className="bg-white/50 p-3 rounded-xl">
-            <div className="text-gray-400 text-xs">主題數量</div>
+          <div className="bg-white/50 p-2.5 sm:p-3 rounded-xl">
+            <div className="text-gray-400 text-[10px] sm:text-xs">主題數量</div>
             <div className="font-bold text-gray-700">{topicCount} 個</div>
           </div>
-          <div className="bg-white/50 p-3 rounded-xl">
-            <div className="text-gray-400 text-xs">主題內圖片</div>
+          <div className="bg-white/50 p-2.5 sm:p-3 rounded-xl">
+            <div className="text-gray-400 text-[10px] sm:text-xs">主題內圖片</div>
             <div className="font-bold text-gray-700">{topicImageCount} 張</div>
           </div>
         </div>
       </div>
 
       {/* 導出/導入按鈕 */}
-      <div className="flex flex-col gap-3 mb-6">
+      <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6">
         <button
           onClick={handleExport}
-          className="w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+          className="w-full py-3 sm:py-4 text-sm sm:text-base flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         >
-          <span className="text-lg">📤</span>
+          <span className="text-base sm:text-lg">📤</span>
           導出備份檔案
         </button>
 
         <button
           onClick={handleImport}
           disabled={importing}
-          className={`w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
+          className={`w-full py-3 sm:py-4 text-sm sm:text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
             importing
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
           }`}
         >
-          <span className="text-lg">📥</span>
+          <span className="text-base sm:text-lg">📥</span>
           {importing ? '導入中...' : '導入備份檔案'}
         </button>
 
@@ -257,16 +257,16 @@ function DataPage({ gameState }) {
       {/* 導入結果提示 */}
       {importResult && (
         <div
-          className={`p-4 rounded-xl mb-6 ${
+          className={`p-3 sm:p-4 rounded-xl mb-4 sm:mb-6 ${
             importResult.success
               ? 'bg-emerald-50 border border-emerald-200'
               : 'bg-rose-50 border border-rose-200'
           }`}
         >
-          <div className="flex items-start gap-3">
-            <span className="text-xl">{importResult.success ? '✅' : '❌'}</span>
+          <div className="flex items-start gap-2 sm:gap-3">
+            <span className="text-lg sm:text-xl">{importResult.success ? '✅' : '❌'}</span>
             <p
-              className={`text-sm whitespace-pre-line ${
+              className={`text-xs sm:text-sm whitespace-pre-line ${
                 importResult.success ? 'text-emerald-700' : 'text-rose-700'
               }`}
             >
@@ -285,14 +285,14 @@ function DataPage({ gameState }) {
       )}
 
       {/* 工具區 */}
-      <div className="glass-card p-5 rounded-2xl">
-        <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+      <div className="glass-card p-4 sm:p-5 rounded-2xl">
+        <h3 className="font-bold text-gray-700 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
           <span>🛠️</span> 工具
         </h3>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
           <button
             onClick={handleGarbageCollection}
-            className="w-full py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all duration-300"
+            className="w-full py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all duration-300"
           >
             <span>🧹</span>
             清理未使用的圖片
@@ -300,7 +300,7 @@ function DataPage({ gameState }) {
 
           <button
             onClick={() => setShowConfirmClear(true)}
-            className="w-full py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all duration-300"
+            className="w-full py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all duration-300"
           >
             <span>🗑️</span>
             清除所有資料
