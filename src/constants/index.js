@@ -15,9 +15,9 @@ export const RHYTHM_SETTINGS = {
 
 // 音訊設定
 export const AUDIO_FILES = {
-  START: '/start.mp3',    // 開始前奏
-  ROUND: '/test_round.mp3',    // 每組循環播放
-  END: '/end.mp3',        // 遊戲結束
+  START: import.meta.env.BASE_URL + 'start.mp3',    // 開始前奏
+  ROUND: import.meta.env.BASE_URL + 'round.mp3',    // 每組循環播放
+  END: import.meta.env.BASE_URL + 'end.mp3',        // 遊戲結束
 }
 
 // 圖片壓縮設定
