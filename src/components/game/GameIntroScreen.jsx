@@ -9,8 +9,8 @@ function GameIntroScreen() {
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-6 animate-pulse">
           <span className="text-4xl">🎵</span>
         </div>
-        <p className="text-lg font-bold text-gray-700 mb-2">前奏播放中...</p>
-        <p className="text-sm text-gray-400">準備開始！</p>
+        <p className="text-lg font-bold text-gray-700 mb-2">音樂即將開始...</p>
+        <p className="text-sm text-gray-400">專注聆聽，跟上節拍！</p>
       </div>
     </div>
   )

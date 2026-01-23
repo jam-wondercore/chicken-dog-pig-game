@@ -9,8 +9,8 @@ function GameEndScreen({ groupCount, onReplay, onBackToSetup }) {
         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-6 animate-float">
           <span className="text-5xl">🎉</span>
         </div>
-        <p className="text-2xl font-bold text-gray-800 mb-2">播放完成！</p>
-        <p className="text-sm text-gray-500 mb-6">已播放 {groupCount} 組圖片</p>
+        <p className="text-2xl font-bold text-gray-800 mb-2">太棒了！</p>
+        <p className="text-sm text-gray-500 mb-6">你完成了 {groupCount} 個回合的挑戰</p>
         <div className="flex gap-3 w-full">
           <button
             onClick={onReplay}
@@ -20,7 +20,7 @@ function GameEndScreen({ groupCount, onReplay, onBackToSetup }) {
               boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
             }}
           >
-            🔄 重新播放
+            🔄 再玩一次
           </button>
           <button
             onClick={onBackToSetup}
