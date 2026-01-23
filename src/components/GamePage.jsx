@@ -34,7 +34,6 @@ function GamePage({ gameState }) {
   // 監聽 resetTrigger 變化來重置本地狀態
   useEffect(() => {
     if (resetTrigger !== lastResetTriggerRef.current) {
-      console.log('[GamePage] resetTrigger 變化，重置本地狀態')
       lastResetTriggerRef.current = resetTrigger
 
       // 清除計時器
@@ -53,10 +52,7 @@ function GamePage({ gameState }) {
   useEffect(() => {
     if (gamePhase !== GAME_PHASES.READY) return
 
-    console.log('[GamePage] 準備階段開始，等待前奏結束')
-
     const introTimer = setTimeout(() => {
-      console.log('[GamePage] 前奏結束，進入遊戲進行階段')
       enterPlayingPhase()
     }, RHYTHM_SETTINGS.FIRST_DELAY)
 
@@ -82,7 +78,6 @@ function GamePage({ gameState }) {
     // 單次節拍函數
     const executeBeat = () => {
       const currentBeat = beatIndexRef.current
-      console.log('[executeBeat] 當前拍:', currentBeat)
 
       if (currentBeat < RHYTHM_SETTINGS.TOTAL_BEATS - 1) {
         // 還有下一拍
@@ -95,7 +90,6 @@ function GamePage({ gameState }) {
         }, RHYTHM_SETTINGS.BEAT_INTERVAL)
       } else {
         // 當前組完成
-        console.log('[executeBeat] 當前組完成')
         finishCurrentGroup()
       }
     }
@@ -105,10 +99,8 @@ function GamePage({ gameState }) {
       currentPhaseRef.current = BEAT_PHASES.WAITING
       beatIndexRef.current = -1
       setCurrentBeatIndex(-1)
-      console.log('[startWaiting] 開始等待', RHYTHM_SETTINGS.WAIT_TIME, 'ms')
 
       timerRef.current = setTimeout(() => {
-        console.log('[startWaiting] 等待結束，開始跳動')
         startBeating()
       }, RHYTHM_SETTINGS.WAIT_TIME)
     }
@@ -126,14 +118,11 @@ function GamePage({ gameState }) {
 
     // 完成當前組
     const finishCurrentGroup = () => {
-      console.log('[finishCurrentGroup] 當前組:', currentGroupIndex, '總組數:', groups.length)
       if (currentGroupIndex < groups.length - 1) {
         // 切換到下一組
-        console.log('[finishCurrentGroup] 切換到下一組')
         setCurrentGroupIndex(prev => prev + 1)
       } else {
-        // 所有組播放完畢
-        console.log('[finishCurrentGroup] 所有組播放完畢')
+        // 所有組完成
         enterEndedPhase()
       }
     }
@@ -227,15 +216,15 @@ function GamePage({ gameState }) {
             <div>
               <div className="text-xs text-gray-400 font-medium">
                 {gamePhase === GAME_PHASES.PLAYING
-                  ? '播放中'
+                  ? '遊戲進行中'
                   : gamePhase === GAME_PHASES.READY
-                  ? '準備中'
+                  ? '即將開始'
                   : gamePhase === GAME_PHASES.ENDED
-                  ? '已結束'
-                  : '已暫停'}
+                  ? '遊戲結束'
+                  : '等待開始'}
               </div>
               <div className="text-sm font-bold text-gray-700">
-                第 {currentGroupIndex + 1} / {groups.length} 組
+                第 {currentGroupIndex + 1} 回合（共 {groups.length} 回合）
               </div>
             </div>
           </div>
