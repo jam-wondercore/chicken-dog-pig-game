@@ -1,8 +1,8 @@
 function TabBar({ currentTab, onTabChange }) {
   const tabs = [
-    { id: 'data', label: '資料', icon: '💾' },
+    { id: 'setting', label: '設定', icon: '⚙️' },
     { id: 'topics', label: '主題庫', icon: '📁' },
-    { id: 'setup', label: '設定', icon: '⚙️' },
+    { id: 'group', label: '群組', icon: '👥' },
     { id: 'game', label: '遊戲', icon: '🎮' },
   ]
 

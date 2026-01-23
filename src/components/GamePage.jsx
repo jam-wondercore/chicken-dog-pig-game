@@ -16,7 +16,7 @@ function GamePage({ gameState }) {
     setCurrentGroupIndex,
     resetTrigger,
     resumeGame,
-    backToSetup,
+    backToGroup,
     enterPlayingPhase,
     enterEndedPhase,
     getGroupImages,
@@ -144,10 +144,10 @@ function GamePage({ gameState }) {
     resumeGame()
   }
 
-  // 處理返回設定
-  const handleBackToSetup = () => {
+  // 處理返回群組
+  const handleBackToGroup = () => {
     stopAllAudio()
-    backToSetup()
+    backToGroup()
   }
 
   // 處理結束遊戲按鈕
@@ -181,7 +181,7 @@ function GamePage({ gameState }) {
           <GameEndScreen
             groupCount={groups.length}
             onReplay={handleReplay}
-            onBackToSetup={handleBackToSetup}
+            onBackToGroup={handleBackToGroup}
           />
         )
 

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
 import { GRID_MODES, MAX_GROUPS } from '../constants'
 
-function SetupPage({ gameState }) {
+function GroupPage({ gameState }) {
   const {
     groups,
     currentGroupId,
@@ -280,4 +280,4 @@ function SetupPage({ gameState }) {
   )
 }
 
-export default SetupPage
+export default GroupPage

@@ -5,7 +5,7 @@ import { formatSize } from '../utils/format'
 import { STORAGE_KEYS, STORAGE_CONFIG } from '../constants'
 import { ConfirmModal } from './common'
 
-function DataPage({ gameState }) {
+function SettingPage({ gameState }) {
   const { groups, topics, runGarbageCollection } = gameState
   const fileInputRef = useRef(null)
   const [importing, setImporting] = useState(false)
@@ -322,4 +322,4 @@ function DataPage({ gameState }) {
   )
 }
 
-export default DataPage
+export default SettingPage

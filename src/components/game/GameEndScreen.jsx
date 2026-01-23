@@ -4,7 +4,7 @@
  *
  * 使用與 ImageGrid 相同的 grid 結構來保持一致高度
  */
-function GameEndScreen({ groupCount, onReplay, onBackToSetup }) {
+function GameEndScreen({ groupCount, onReplay, onBackToGroup }) {
   return (
     <div className="glass-card-elevated relative w-full max-w-256 mx-auto p-1.5 sm:p-4 rounded-xl sm:rounded-2xl">
       {/* 隱藏的 grid 結構，用於撐出與 ImageGrid 相同的高度 */}
@@ -32,10 +32,10 @@ function GameEndScreen({ groupCount, onReplay, onBackToSetup }) {
             🔄 再玩一次
           </button>
           <button
-            onClick={onBackToSetup}
+            onClick={onBackToGroup}
             className="flex-1 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:-translate-y-0.5"
           >
-            ⚙️ 返回設定
+            👥 返回群組
           </button>
         </div>
       </div>

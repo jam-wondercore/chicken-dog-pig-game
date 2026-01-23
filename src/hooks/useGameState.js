@@ -24,7 +24,7 @@ const getTabFromUrl = () => {
   if (tab && Object.values(TABS).includes(tab)) {
     return tab
   }
-  return TABS.SETUP
+  return TABS.GROUP
 }
 
 // 更新 URL 的 tab 參數
@@ -443,10 +443,10 @@ function useGameState() {
     setGamePhase(GAME_PHASES.READY)
   }, [])
 
-  const backToSetup = useCallback(() => {
-    console.log('[useGameState] backToSetup 被呼叫')
+  const backToGroup = useCallback(() => {
+    console.log('[useGameState] backToGroup 被呼叫')
     setGamePhase(GAME_PHASES.STOPPED)
-    setCurrentTab(TABS.SETUP)
+    setCurrentTab(TABS.GROUP)
     setCurrentBeatIndex(-1)
     setCurrentGroupIndex(0)
     setResetTrigger(prev => prev + 1)
@@ -458,7 +458,7 @@ function useGameState() {
       setGroups(getDefaultGroups())
       setCurrentGroupId('group-1')
       setGamePhase(GAME_PHASES.STOPPED)
-      setCurrentTab(TABS.SETUP)
+      setCurrentTab(TABS.GROUP)
       setTimeout(() => runGarbageCollection(), 100)
     }
   }, [runGarbageCollection])
@@ -507,7 +507,7 @@ function useGameState() {
     resetGame,
     startGame,
     resumeGame,
-    backToSetup,
+    backToGroup,
     enterPlayingPhase,
     enterEndedPhase,
 

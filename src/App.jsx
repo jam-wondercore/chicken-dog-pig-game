@@ -1,8 +1,8 @@
 import TabBar from './components/TabBar'
-import SetupPage from './components/SetupPage'
+import GroupPage from './components/GroupPage'
 import GamePage from './components/GamePage'
 import TopicsPage from './components/TopicsPage'
-import DataPage from './components/DataPage'
+import SettingPage from './components/SettingPage'
 import useGameState from './hooks/useGameState'
 
 function App() {
@@ -39,9 +39,9 @@ function App() {
 
         {/* 內容區域 */}
         <div className="transition-all duration-300 ease-out">
-          {gameState.currentTab === 'data' && <DataPage gameState={gameState} />}
+          {gameState.currentTab === 'setting' && <SettingPage gameState={gameState} />}
           {gameState.currentTab === 'topics' && <TopicsPage gameState={gameState} />}
-          {gameState.currentTab === 'setup' && <SetupPage gameState={gameState} />}
+          {gameState.currentTab === 'group' && <GroupPage gameState={gameState} />}
           {gameState.currentTab === 'game' && <GamePage gameState={gameState} />}
         </div>
       </div>
