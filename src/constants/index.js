@@ -55,8 +55,8 @@ export const GRID_MODES = {
 
 // 標籤頁
 export const TABS = {
-  DATA: 'data',
-  SETUP: 'setup',
+  SETTING: 'setting',
+  GROUP: 'group',
   TOPICS: 'topics',
   GAME: 'game',
 }

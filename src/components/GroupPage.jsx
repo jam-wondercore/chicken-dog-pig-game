@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
 import { GRID_MODES, MAX_GROUPS } from '../constants'
 
-function SetupPage({ gameState }) {
+function GroupPage({ gameState }) {
   const {
     groups,
     currentGroupId,
@@ -107,7 +107,7 @@ function SetupPage({ gameState }) {
                     setDropPosition(null)
                   }}
                   onClick={() => setCurrentGroupId(group.id)}
-                  className={`relative px-4 py-2 mx-1.5 rounded-xl font-semibold text-xs transition-all duration-300 cursor-grab active:cursor-grabbing ${
+                  className={`relative px-2 py-1.5 sm:px-4 sm:py-2 mx-0.5 sm:mx-1.5 rounded-lg sm:rounded-xl font-semibold text-[10px] sm:text-xs transition-all duration-300 cursor-grab active:cursor-grabbing ${
                     isActive
                       ? 'text-white'
                       : 'text-gray-500 hover:text-indigo-600 bg-white/50 hover:bg-white border border-gray-200/50 hover:border-indigo-200'
@@ -130,7 +130,7 @@ function SetupPage({ gameState }) {
           {groups.length < MAX_GROUPS && (
             <button
               onClick={addGroup}
-              className="px-4 py-2 ml-1 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              className="px-2 py-1.5 sm:px-4 sm:py-2 ml-0.5 sm:ml-1 rounded-lg sm:rounded-xl font-semibold text-[10px] sm:text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
             >
               + 新增
             </button>
@@ -160,7 +160,7 @@ function SetupPage({ gameState }) {
         <button
           onClick={() => setShowTopicPicker(true)}
           disabled={topics.length === 0}
-          className={`w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
+          className={`w-full py-3 sm:py-4 text-sm sm:text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
             topics.length === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
@@ -174,14 +174,14 @@ function SetupPage({ gameState }) {
         <div className="flex gap-3">
           <button
             onClick={() => shuffleGroup(currentGroupId)}
-            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+            className="flex-1 py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl font-semibold bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           >
             <span>🔀</span>
             隨機打亂
           </button>
           <button
             onClick={shuffleAllGroups}
-            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+            className="flex-1 py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl font-semibold bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           >
             <span>🔀</span>
             打亂全部
@@ -249,7 +249,7 @@ function SetupPage({ gameState }) {
           {groups.length > 1 && (
             <button
               onClick={() => deleteGroup(currentGroupId)}
-              className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
+              className="btn-danger flex-1 py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2"
             >
               <span>🗑️</span>
               刪除此組
@@ -258,7 +258,7 @@ function SetupPage({ gameState }) {
 
           <button
             onClick={clearAllData}
-            className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
+            className="btn-danger flex-1 py-2.5 sm:py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2"
           >
             <span>🗑️</span>
             清除全部
@@ -280,4 +280,4 @@ function SetupPage({ gameState }) {
   )
 }
 
-export default SetupPage
+export default GroupPage

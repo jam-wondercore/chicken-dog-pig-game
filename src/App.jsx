@@ -1,8 +1,8 @@
 import TabBar from './components/TabBar'
-import SetupPage from './components/SetupPage'
+import GroupPage from './components/GroupPage'
 import GamePage from './components/GamePage'
 import TopicsPage from './components/TopicsPage'
-import DataPage from './components/DataPage'
+import SettingPage from './components/SettingPage'
 import useGameState from './hooks/useGameState'
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
         <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-indigo-300/30 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto py-8 px-4 md:py-12 md:px-6">
+      <div className="container mx-auto py-8 px-2 md:py-12 md:px-6">
         {/* 標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-5xl font-extrabold gradient-text tracking-tight mb-3">
@@ -39,10 +39,10 @@ function App() {
 
         {/* 內容區域 */}
         <div className="transition-all duration-300 ease-out">
-          {gameState.currentTab === 'setup' && <SetupPage gameState={gameState} />}
-          {gameState.currentTab === 'game' && <GamePage gameState={gameState} />}
+          {gameState.currentTab === 'setting' && <SettingPage gameState={gameState} />}
           {gameState.currentTab === 'topics' && <TopicsPage gameState={gameState} />}
-          {gameState.currentTab === 'data' && <DataPage gameState={gameState} />}
+          {gameState.currentTab === 'group' && <GroupPage gameState={gameState} />}
+          {gameState.currentTab === 'game' && <GamePage gameState={gameState} />}
         </div>
       </div>
     </div>
