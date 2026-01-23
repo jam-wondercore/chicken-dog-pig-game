@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
-import { GRID_MODES } from '../constants'
+import { GRID_MODES, MAX_GROUPS } from '../constants'
 
 function SetupPage({ gameState }) {
   const {
@@ -58,10 +58,10 @@ function SetupPage({ gameState }) {
   const currentGroupImages = getGroupImages(currentGroupId)
 
   return (
-    <div className="max-w-[520px] mx-auto px-4">
+    <div className="max-w-135 mx-auto px-4">
       {/* 組別標籤 */}
       <div className="glass-card p-3 rounded-2xl mb-6">
-        <div className="flex flex-wrap justify-center items-center">
+        <div className="flex flex-wrap justify-center items-center gap-y-2">
           {groups.map((group, index) => {
             const isActive = currentGroupId === group.id
             const isDragging = draggedIndex === index
@@ -127,7 +127,7 @@ function SetupPage({ gameState }) {
               </div>
             )
           })}
-          {groups.length < 10 && (
+          {groups.length < MAX_GROUPS && (
             <button
               onClick={addGroup}
               className="px-4 py-2 ml-1 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
