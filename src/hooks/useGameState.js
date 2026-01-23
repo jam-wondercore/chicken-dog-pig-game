@@ -366,6 +366,13 @@ function useGameState() {
 
   const startGame = useCallback(() => {
     console.log('[useGameState] startGame 被呼叫')
+
+    // 即時從 localStorage 讀取最新的 groups 資料
+    const latestGroups = loadGroupsFromStorage()
+    if (latestGroups && latestGroups.length > 0) {
+      setGroups(latestGroups)
+    }
+
     setCurrentGroupIndex(0)
     setCurrentBeatIndex(-1)
     setResetTrigger(prev => prev + 1)
@@ -386,8 +393,16 @@ function useGameState() {
   }, [])
 
   // resumeGame 完整重置並從頭開始
+  // 即時從 localStorage 讀取最新資料，確保遊戲使用最新的設定
   const resumeGame = useCallback(() => {
     console.log('[useGameState] resumeGame 被呼叫')
+
+    // 即時從 localStorage 讀取最新的 groups 資料
+    const latestGroups = loadGroupsFromStorage()
+    if (latestGroups && latestGroups.length > 0) {
+      setGroups(latestGroups)
+    }
+
     setCurrentGroupIndex(0)
     setCurrentBeatIndex(-1)
     setResetTrigger(prev => prev + 1)
