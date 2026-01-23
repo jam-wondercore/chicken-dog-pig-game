@@ -198,10 +198,10 @@ function GamePage({ gameState }) {
     <div className="max-w-256 mx-auto px-4">
       {/* Game Status Card - 置中顯示在 board 上方 */}
       <div className="flex justify-center mb-4">
-        <div className="glass-card px-5 py-3 rounded-2xl flex items-center gap-4">
-          <div className="flex items-center gap-3">
+        <div className="glass-card px-3 py-2 sm:px-5 sm:py-3 rounded-2xl flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center ${
                 gamePhase === GAME_PHASES.PLAYING
                   ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
                   : gamePhase === GAME_PHASES.READY
@@ -209,12 +209,12 @@ function GamePage({ gameState }) {
                   : 'bg-gradient-to-br from-gray-300 to-gray-400'
               }`}
             >
-              <span className={`text-lg ${gamePhase === GAME_PHASES.PLAYING || gamePhase === GAME_PHASES.READY ? 'animate-pulse-soft' : ''}`}>
+              <span className={`text-base sm:text-lg ${gamePhase === GAME_PHASES.PLAYING || gamePhase === GAME_PHASES.READY ? 'animate-pulse-soft' : ''}`}>
                 🎵
               </span>
             </div>
             <div>
-              <div className="text-xs text-gray-400 font-medium">
+              <div className="text-[10px] sm:text-xs text-gray-400 font-medium">
                 {gamePhase === GAME_PHASES.PLAYING
                   ? '遊戲進行中'
                   : gamePhase === GAME_PHASES.READY
@@ -223,7 +223,7 @@ function GamePage({ gameState }) {
                   ? '遊戲結束'
                   : '等待開始'}
               </div>
-              <div className="text-sm font-bold text-gray-700">
+              <div className="text-xs sm:text-sm font-bold text-gray-700">
                 第 {currentGroupIndex + 1} 回合（共 {groups.length} 回合）
               </div>
             </div>
@@ -249,28 +249,28 @@ function GamePage({ gameState }) {
           {showStopButton && (
             <button
               onClick={handleStopGame}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
               style={{
                 background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
                 boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)',
               }}
               title="結束遊戲"
             >
-              <span className="text-lg">⏹</span>
+              <span className="text-base sm:text-lg">⏹</span>
             </button>
           )}
 
           {showPlayButton && (
             <button
               onClick={resumeGame}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 text-white"
               style={{
                 background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
                 boxShadow: '0 2px 10px rgba(16, 185, 129, 0.4)',
               }}
               title="開始遊戲"
             >
-              <span className="text-lg">▶️</span>
+              <span className="text-base sm:text-lg">▶️</span>
             </button>
           )}
         </div>
