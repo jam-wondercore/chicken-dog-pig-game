@@ -1,40 +1,65 @@
-function ImageGrid({ images, onImageClick, activeIndex = -1, mode = 'setup' }) {
+import { GRID_MODES } from '../constants'
+
+function ImageGrid({ images, onImageClick, activeIndex = -1, mode = GRID_MODES.SETUP }) {
   return (
-    <div className="grid grid-cols-4 gap-4 w-full max-w-[480px] mx-auto bg-white p-5 rounded-2xl shadow-lg">
-      {images.map((image, index) => (
-        <div
-          key={index}
-          onClick={() => mode === 'setup' && onImageClick && onImageClick(index)}
-          className={`
-            relative aspect-square rounded-lg overflow-hidden group
-            ${mode === 'setup' ? 'cursor-pointer' : ''}
-            ${activeIndex === index ? 'z-10' : ''}
-            transition-all duration-200
-          `}
-          style={{
-            borderWidth: activeIndex === index ? '6px' : '3px',
-            borderColor: activeIndex === index ? 'var(--primary-color)' : '#ddd',
-            boxShadow: activeIndex === index ? 'var(--active-shadow)' : 'none'
-          }}
-        >
-          {image ? (
-            <img
-              src={image}
-              alt={`圖片 ${index + 1}`}
-              className={`w-full h-full object-cover ${mode === 'setup' ? 'group-hover:scale-110' : ''} transition-transform duration-300`}
-            />
-          ) : (
-            <div className={`w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center gap-2 ${mode === 'setup' ? 'group-hover:from-blue-50 group-hover:to-purple-50' : ''} transition-all duration-200`}>
-              <span className={`text-3xl ${mode === 'setup' ? 'group-hover:scale-110' : ''} transition-transform duration-200`}>
-                📷
-              </span>
-              <span className={`text-xs font-bold ${mode === 'setup' ? 'text-gray-400 group-hover:text-blue-600' : 'text-gray-400'} transition-colors duration-200`}>
-                {index + 1}
-              </span>
+    <div className="glass-card-elevated grid grid-cols-4 gap-5 w-full max-w-256 mx-auto p-4 rounded-2xl">
+      {images.map((image, index) => {
+        const isActive = activeIndex === index
+        return (
+          <div
+            key={index}
+            onClick={() => mode === GRID_MODES.SETUP && onImageClick && onImageClick(index)}
+            className={`
+              relative aspect-square rounded-xl overflow-hidden group
+              ${mode === GRID_MODES.SETUP ? 'cursor-pointer' : ''}
+              ${isActive ? 'z-10 image-active' : ''}
+              transition-all duration-300 ease-out
+              ${!isActive ? 'border-2 border-gray-200/60' : ''}
+              ${mode === GRID_MODES.SETUP && !isActive ? 'hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1' : ''}
+            `}
+          >
+            {/* Active Glow Ring */}
+            {isActive && (
+              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 rounded-xl blur opacity-75 animate-glow" />
+            )}
+
+            <div className={`relative w-full h-full ${isActive ? 'rounded-lg overflow-hidden' : ''}`}>
+              {image ? (
+                <img
+                  src={image}
+                  alt={`圖片 ${index + 1}`}
+                  className={`w-full h-full object-cover transition-transform duration-300 ease-out ${
+                    mode === GRID_MODES.SETUP ? 'group-hover:scale-110' : ''
+                  } ${isActive ? 'scale-100' : ''}`}
+                />
+              ) : (
+                <div
+                  className={`w-full h-full flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${
+                    mode === GRID_MODES.SETUP
+                      ? 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-indigo-50 group-hover:to-purple-50'
+                      : 'bg-gradient-to-br from-gray-50 to-gray-100'
+                  }`}
+                >
+                  <span
+                    className={`text-2xl transition-all duration-300 ${
+                      mode === GRID_MODES.SETUP ? 'group-hover:scale-125 group-hover:rotate-12' : ''
+                    }`}
+                  >
+                    📷
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold transition-colors duration-300 ${
+                      mode === GRID_MODES.SETUP ? 'text-gray-300 group-hover:text-indigo-500' : 'text-gray-300'
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

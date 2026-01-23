@@ -1,5 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
+import { GRID_MODES, MAX_GROUPS } from '../constants'
 
 function SetupPage({ gameState }) {
   const {
@@ -9,23 +10,34 @@ function SetupPage({ gameState }) {
     addGroup,
     deleteGroup,
     updateGroupImage,
-    batchUploadImages,
     clearAllData,
-    startGame,
+    topics,
+    importFromTopic,
+    shuffleGroup,
+    shuffleAllGroups,
+    reorderGroups,
+    getGroupImages,
   } = gameState
 
-  const batchInputRef = useRef(null)
+  const [showTopicPicker, setShowTopicPicker] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState(null)
+  const [dropPosition, setDropPosition] = useState(null) // 插入位置 (0 到 groups.length)
+
   const singleInputRef = useRef(null)
   const currentEditIndex = useRef(null)
 
   const currentGroup = groups.find(g => g.id === currentGroupId) || groups[0]
 
-  const handleBatchUpload = (e) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      batchUploadImages(currentGroupId, files)
-    }
-    e.target.value = ''
+  // 拖曳開始
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  // 拖曳結束
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDropPosition(null)
   }
 
   const handleSingleUpload = (index) => {
@@ -36,53 +48,102 @@ function SetupPage({ gameState }) {
   const handleSingleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (file && currentEditIndex.current !== null) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        updateGroupImage(currentGroupId, currentEditIndex.current, event.target.result)
-      }
-      reader.readAsDataURL(file)
+      // 直接傳 File 對象，讓 useGameState 統一處理壓縮和儲存
+      updateGroupImage(currentGroupId, currentEditIndex.current, file)
     }
     e.target.value = ''
   }
 
-  const canStartGame = groups.some(group =>
-    group.images.some(img => img !== null)
-  )
+  // 取得當前組別的圖片 base64（用於顯示）
+  const currentGroupImages = getGroupImages(currentGroupId)
 
   return (
-    <div className="max-w-[500px] mx-auto px-6">
+    <div className="max-w-135 mx-auto px-4">
       {/* 組別標籤 */}
-      <div className="grid grid-cols-5 gap-3 mb-8">
-        {groups.map((group, index) => (
-          <button
-            key={group.id}
-            onClick={() => setCurrentGroupId(group.id)}
-            className={`py-2.5 px-2 rounded-lg font-bold text-xs transition-all duration-200 ${
-              currentGroupId === group.id
-                ? 'text-white shadow-lg transform -translate-y-1 scale-105'
-                : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:scale-102'
-            }`}
-            style={currentGroupId === group.id ? { backgroundColor: 'var(--secondary-color)' } : {}}
-          >
-            第{index + 1}組
-          </button>
-        ))}
-        {groups.length < 10 && (
-          <button
-            onClick={addGroup}
-            className="py-2.5 px-2 rounded-lg font-bold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-          >
-            + 新增
-          </button>
-        )}
+      <div className="glass-card p-3 rounded-2xl mb-6">
+        <div className="flex flex-wrap justify-center items-center gap-y-2">
+          {groups.map((group, index) => {
+            const isActive = currentGroupId === group.id
+            const isDragging = draggedIndex === index
+            const showDropBefore = dropPosition === index
+            const showDropAfter = dropPosition === index + 1
+            return (
+              <div key={group.id} className="relative">
+                {/* 左側插入指示線 */}
+                <div
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedIndex !== null && showDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <button
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const relativeX = (e.clientX - rect.left) / rect.width
+                    // 左側 40% 觸發前方插入，右側 40% 觸發後方插入
+                    let pos = null
+                    if (relativeX < 0.4) {
+                      pos = index
+                    } else if (relativeX > 0.6) {
+                      pos = index + 1
+                    }
+                    if (pos !== null && draggedIndex !== null && pos !== draggedIndex && pos !== draggedIndex + 1) {
+                      setDropPosition(pos)
+                    } else {
+                      setDropPosition(null)
+                    }
+                  }}
+                  onDragLeave={() => setDropPosition(null)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    if (dropPosition !== null && draggedIndex !== null) {
+                      const targetIndex = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition
+                      reorderGroups(draggedIndex, targetIndex)
+                    }
+                    setDraggedIndex(null)
+                    setDropPosition(null)
+                  }}
+                  onClick={() => setCurrentGroupId(group.id)}
+                  className={`relative px-4 py-2 mx-1.5 rounded-xl font-semibold text-xs transition-all duration-300 cursor-grab active:cursor-grabbing ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-500 hover:text-indigo-600 bg-white/50 hover:bg-white border border-gray-200/50 hover:border-indigo-200'
+                  } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                >
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg" />
+                  )}
+                  <span className="relative">第{index + 1}組</span>
+                </button>
+                {/* 右側插入指示線 */}
+                <div
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedIndex !== null && showDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
+              </div>
+            )
+          })}
+          {groups.length < MAX_GROUPS && (
+            <button
+              onClick={addGroup}
+              className="px-4 py-2 ml-1 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            >
+              + 新增
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 圖片網格 */}
-      <div className="mb-8">
+      <div className="mb-6">
         <ImageGrid
-          images={currentGroup.images}
+          images={currentGroupImages}
           onImageClick={handleSingleUpload}
-          mode="setup"
+          mode={GRID_MODES.SETUP}
         />
         <input
           ref={singleInputRef}
@@ -94,58 +155,124 @@ function SetupPage({ gameState }) {
       </div>
 
       {/* 操作按鈕 */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
+        {/* 從主題匯入 */}
         <button
-          onClick={() => batchInputRef.current?.click()}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
-        >
-          <span className="text-xl">📤</span>
-          批次上傳圖片
-        </button>
-        <input
-          ref={batchInputRef}
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleBatchUpload}
-          className="hidden"
-        />
-
-        <button
-          onClick={startGame}
-          disabled={!canStartGame}
-          className={`w-full py-4 rounded-xl font-bold text-base shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${
-            canStartGame
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          onClick={() => setShowTopicPicker(true)}
+          disabled={topics.length === 0}
+          className={`w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 ${
+            topics.length === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
           }`}
         >
-          <span className="text-xl">▶</span>
-          開始遊戲
+          <span className="text-lg">📥</span>
+          從主題匯入
         </button>
 
-        {groups.length > 1 && (
+        {/* 打亂按鈕 */}
+        <div className="flex gap-3">
           <button
-            onClick={() => deleteGroup(currentGroupId)}
-            className="w-full py-3 rounded-xl bg-white hover:bg-red-50 text-red-600 font-medium text-sm border-2 border-red-200 hover:border-red-300 transition-all duration-200 flex items-center justify-center gap-2 mt-6"
+            onClick={() => shuffleGroup(currentGroupId)}
+            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           >
-            <span>🗑</span>
-            刪除此組
+            <span>🔀</span>
+            隨機打亂
           </button>
+          <button
+            onClick={shuffleAllGroups}
+            className="flex-1 py-3 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <span>🔀</span>
+            打亂全部
+          </button>
+        </div>
+
+        {/* 主題選擇器 Modal */}
+        {showTopicPicker && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="glass-card-elevated rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold gradient-text">選擇主題</h3>
+                <button
+                  onClick={() => setShowTopicPicker(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                將從選擇的主題中隨機匯入 8 張圖片到目前的組別
+              </p>
+              <div className="flex flex-col gap-2">
+                {topics.map((topic) => {
+                  const imageCount = (topic.imageIds || []).length
+                  return (
+                    <button
+                      key={topic.id}
+                      onClick={() => {
+                        importFromTopic(currentGroupId, topic.id)
+                        setShowTopicPicker(false)
+                      }}
+                      disabled={imageCount === 0}
+                      className={`p-4 rounded-xl text-left transition-all duration-300 ${
+                        imageCount === 0
+                          ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                          : 'bg-white hover:bg-indigo-50 hover:shadow-md border border-gray-100 hover:border-indigo-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{topic.name}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          imageCount === 0
+                            ? 'bg-gray-100 text-gray-400'
+                            : 'bg-indigo-100 text-indigo-600'
+                        }`}>
+                          {imageCount} 張
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              {topics.length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                  <p>尚未建立任何主題</p>
+                  <p className="text-sm mt-1">請先到主題庫新增主題</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
-        <button
-          onClick={clearAllData}
-          className="w-full py-3 rounded-xl bg-white hover:bg-red-50 text-red-500 font-medium text-sm border-2 border-red-200 hover:border-red-300 transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          <span>🗑</span>
-          清除所有組別照片
-        </button>
+        <div className="flex gap-3 mt-4">
+          {groups.length > 1 && (
+            <button
+              onClick={() => deleteGroup(currentGroupId)}
+              className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
+            >
+              <span>🗑️</span>
+              刪除此組
+            </button>
+          )}
 
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 py-3 px-5 rounded-r-xl text-gray-800 font-medium text-sm mt-2 flex items-center gap-2">
-          <span className="text-blue-600 text-lg">✏️</span>
-          <span>
-            正在編輯第 <span className="font-bold text-blue-600 text-base">{groups.findIndex(g => g.id === currentGroupId) + 1}</span> 組
+          <button
+            onClick={clearAllData}
+            className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2"
+          >
+            <span>🗑️</span>
+            清除全部
+          </button>
+        </div>
+
+        {/* Status Badge */}
+        <div className="status-badge justify-center mt-4 border border-indigo-100">
+          <span className="text-indigo-500">✏️</span>
+          <span className="text-gray-600">
+            正在編輯
+            <span className="font-bold text-indigo-600 mx-1">
+              第 {groups.findIndex(g => g.id === currentGroupId) + 1} 組
+            </span>
           </span>
         </div>
       </div>
