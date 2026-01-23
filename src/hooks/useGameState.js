@@ -16,9 +16,43 @@ import {
 import { fisherYatesShuffle, randomPickWithRepeat } from '../utils/shuffle'
 import { TABS, GAME_PHASES, DEFAULT_GROUP_SIZE, MAX_GROUPS } from '../constants'
 
+// 從 URL 讀取 tab 參數
+const getTabFromUrl = () => {
+  const params = new URLSearchParams(window.location.search)
+  const tab = params.get('tab')
+  // 驗證 tab 值是否有效
+  if (tab && Object.values(TABS).includes(tab)) {
+    return tab
+  }
+  return TABS.SETUP
+}
+
+// 更新 URL 的 tab 參數
+const updateUrlTab = (tab) => {
+  const url = new URL(window.location.href)
+  url.searchParams.set('tab', tab)
+  window.history.replaceState({}, '', url)
+}
+
 function useGameState() {
   // ========== 基礎狀態 ==========
-  const [currentTab, setCurrentTab] = useState(TABS.SETUP)
+  const [currentTab, setCurrentTabState] = useState(() => getTabFromUrl())
+
+  // 包裝 setCurrentTab，同時更新 state 和 URL
+  const setCurrentTab = useCallback((tab) => {
+    setCurrentTabState(tab)
+    updateUrlTab(tab)
+  }, [])
+
+  // 監聽瀏覽器上一頁/下一頁事件
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentTabState(getTabFromUrl())
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const [groups, setGroups] = useState(() => loadGroupsFromStorage() || getDefaultGroups())
   const [currentGroupId, setCurrentGroupId] = useState(() => {
     const saved = loadGroupsFromStorage()
