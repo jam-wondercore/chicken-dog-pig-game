@@ -2,3 +2,4 @@ example.html
 node_modules/
 .Ds_Store
 dist/
+old/

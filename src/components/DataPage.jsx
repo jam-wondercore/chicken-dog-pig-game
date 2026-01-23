@@ -142,14 +142,8 @@ function DataPage({ gameState }) {
 
       localStorage.setItem(STORAGE_KEYS.TOPICS, JSON.stringify(importedTopics))
 
-      setImportResult({
-        success: true,
-        message: `導入成功！\n` +
-          `圖片：${Object.keys(data.images).length} 張\n` +
-          `組別：${importedGroups.length} 組\n` +
-          `主題：${importedTopics.length} 個\n\n` +
-          `請重新整理頁面以載入新資料。`,
-      })
+      // 導入成功，自動重新整理頁面
+      window.location.reload()
     } catch (err) {
       console.error('導入失敗:', err)
       setImportResult({
@@ -168,10 +162,8 @@ function DataPage({ gameState }) {
     localStorage.removeItem(STORAGE_KEYS.TOPICS)
     clearAllImages()
     setShowConfirmClear(false)
-    setImportResult({
-      success: true,
-      message: '已清除所有資料。請重新整理頁面。',
-    })
+    // 清除成功，自動重新整理頁面
+    window.location.reload()
   }
 
   // 執行垃圾回收
