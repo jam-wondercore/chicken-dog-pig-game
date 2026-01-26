@@ -41,8 +41,8 @@ export const GAME_PHASES = {
 
 // 節拍階段（每組內的狀態）
 export const BEAT_PHASES = {
-  WAITING: 'waiting',   // 等待階段：等待開始跳動
-  BEATING: 'beating',   // 跳動階段：正在跳動
+  REVEALING: 'revealing', // 揭示階段：圖片依次出現
+  BEATING: 'beating',     // 跳動階段：正在跳動
 }
 
 // 圖片網格模式

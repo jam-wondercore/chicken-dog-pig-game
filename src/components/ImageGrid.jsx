@@ -1,10 +1,21 @@
 import { GRID_MODES } from '../constants'
 
-function ImageGrid({ images, onImageClick, activeIndex = -1, mode = GRID_MODES.SETUP }) {
+/**
+ * ImageGrid 組件
+ * @param {Array} images - 圖片陣列
+ * @param {Function} onImageClick - 點擊圖片的回調
+ * @param {number} activeIndex - 當前高亮的圖片索引（跳動階段）
+ * @param {number} revealIndex - 已揭示到的圖片索引（揭示階段，-1 表示全部隱藏，>= images.length 表示全部顯示）
+ * @param {string} mode - 顯示模式 (SETUP | GAME)
+ */
+function ImageGrid({ images, onImageClick, activeIndex = -1, revealIndex = images.length, mode = GRID_MODES.SETUP }) {
   return (
     <div className="glass-card-elevated grid grid-cols-4 gap-1.5 sm:gap-5 w-full max-w-256 mx-auto p-1.5 sm:p-4 rounded-xl sm:rounded-2xl">
       {images.map((image, index) => {
         const isActive = activeIndex === index
+        const isRevealed = index <= revealIndex
+        const isJustRevealed = index === revealIndex
+
         return (
           <div
             key={index}
@@ -13,9 +24,12 @@ function ImageGrid({ images, onImageClick, activeIndex = -1, mode = GRID_MODES.S
               relative aspect-square rounded-xl overflow-hidden group
               ${mode === GRID_MODES.SETUP ? 'cursor-pointer' : ''}
               ${isActive ? 'z-10 image-active' : ''}
-              transition-all duration-300 ease-out
               ${!isActive ? 'border-2 border-gray-200/60' : ''}
               ${mode === GRID_MODES.SETUP && !isActive ? 'hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1' : ''}
+              ${mode === GRID_MODES.GAME && !isRevealed ? 'opacity-0 scale-75' : ''}
+              ${mode === GRID_MODES.GAME && isRevealed ? 'opacity-100 scale-100' : ''}
+              ${mode === GRID_MODES.GAME && isJustRevealed ? 'animate-reveal' : ''}
+              transition-all duration-300 ease-out
             `}
           >
             {/* Active Glow Ring */}
