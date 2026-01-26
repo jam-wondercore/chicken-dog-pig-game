@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
 
 // 節奏設定
 export const RHYTHM_SETTINGS = {
-  BEAT_INTERVAL: 315,     // 每拍間隔 (快節奏跳動)
+  BEAT_INTERVAL: 326,     // 每拍間隔 (快節奏跳動)
   TOTAL_BEATS: 8,         // 每組跳動 n 拍
 }
 
