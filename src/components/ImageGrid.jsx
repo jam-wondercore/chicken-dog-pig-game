@@ -29,7 +29,7 @@ function ImageGrid({ images, onImageClick, activeIndex = -1, revealIndex = image
               ${mode === GRID_MODES.GAME && !isRevealed ? 'opacity-0 scale-75' : ''}
               ${mode === GRID_MODES.GAME && isRevealed ? 'opacity-100 scale-100' : ''}
               ${mode === GRID_MODES.GAME && isJustRevealed ? 'animate-reveal' : ''}
-              transition-all duration-300 ease-out
+              ${mode === GRID_MODES.SETUP ? 'transition-all duration-300 ease-out' : ''}
             `}
           >
             {/* Active Glow Ring */}
