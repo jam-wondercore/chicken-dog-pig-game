@@ -4,7 +4,7 @@ import GameReadyScreen from './game/GameReadyScreen'
 import GameIntroScreen from './game/GameIntroScreen'
 import GameEndScreen from './game/GameEndScreen'
 import useAudioPlayer from '../hooks/useAudioPlayer'
-import { RHYTHM_SETTINGS, GAME_PHASES, BEAT_PHASES, GRID_MODES } from '../constants'
+import { GAME_PHASES, BEAT_PHASES, GRID_MODES } from '../constants'
 
 function GamePage({ gameState }) {
   const {
@@ -22,8 +22,8 @@ function GamePage({ gameState }) {
     getGroupImages,
   } = gameState
 
-  // 音樂播放 - 根據遊戲階段自動播放對應音樂
-  const { stopAllAudio } = useAudioPlayer(gamePhase, currentGroupIndex, resetTrigger)
+  // 音樂播放 - 預排程音樂播放，與渲染邏輯分離
+  const { stopAllAudio, timing } = useAudioPlayer(gamePhase, currentGroupIndex, resetTrigger, groups.length)
 
   // 節奏控制 refs
   const timerRef = useRef(null)
@@ -54,10 +54,10 @@ function GamePage({ gameState }) {
 
     const introTimer = setTimeout(() => {
       enterPlayingPhase()
-    }, RHYTHM_SETTINGS.FIRST_DELAY)
+    }, timing.startDuration)
 
     return () => clearTimeout(introTimer)
-  }, [gamePhase, enterPlayingPhase])
+  }, [gamePhase, enterPlayingPhase, timing.startDuration])
 
   // 核心節拍控制器 - 遊戲進行中的節奏控制
   useEffect(() => {
@@ -79,7 +79,7 @@ function GamePage({ gameState }) {
     const executeBeat = () => {
       const currentBeat = beatIndexRef.current
 
-      if (currentBeat < RHYTHM_SETTINGS.TOTAL_BEATS - 1) {
+      if (currentBeat < timing.totalBeats - 1) {
         // 還有下一拍
         currentPhaseRef.current = BEAT_PHASES.BEATING
         beatIndexRef.current = currentBeat + 1
@@ -87,7 +87,7 @@ function GamePage({ gameState }) {
 
         timerRef.current = setTimeout(() => {
           executeBeat()
-        }, RHYTHM_SETTINGS.BEAT_INTERVAL)
+        }, timing.beatInterval)
       } else {
         // 當前組完成
         finishCurrentGroup()
@@ -102,7 +102,7 @@ function GamePage({ gameState }) {
 
       timerRef.current = setTimeout(() => {
         startBeating()
-      }, RHYTHM_SETTINGS.WAIT_TIME)
+      }, timing.waitTime)
     }
 
     // 開始新一組的跳動
@@ -113,7 +113,7 @@ function GamePage({ gameState }) {
 
       timerRef.current = setTimeout(() => {
         executeBeat()
-      }, RHYTHM_SETTINGS.BEAT_INTERVAL)
+      }, timing.beatInterval)
     }
 
     // 完成當前組
@@ -137,7 +137,7 @@ function GamePage({ gameState }) {
         timerRef.current = null
       }
     }
-  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase])
+  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase, timing.totalBeats, timing.beatInterval, timing.waitTime])
 
   // 處理重新播放
   const handleReplay = () => {

@@ -7,16 +7,14 @@ export const STORAGE_KEYS = {
 
 // 節奏設定
 export const RHYTHM_SETTINGS = {
-  FIRST_DELAY: 3100,      // 前奏延遲 (音樂開始後的前奏時間)
   BEAT_INTERVAL: 315,     // 每拍間隔 (快節奏跳動)
-  WAIT_TIME: 2820,        // 每組等待時間 (ms)
   TOTAL_BEATS: 8,         // 每組跳動 n 拍
 }
 
 // 音訊設定
 export const AUDIO_FILES = {
   START: import.meta.env.BASE_URL + 'start.mp3',    // 開始前奏
-  ROUND: import.meta.env.BASE_URL + 'round.mp3',    // 每組循環播放
+  ROUND: import.meta.env.BASE_URL + 'test_round.mp3',    // 每組循環播放
   END: import.meta.env.BASE_URL + 'end.mp3',        // 遊戲結束
 }
 
