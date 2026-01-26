@@ -230,9 +230,12 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
   }, [clearAllScheduledTimers, stopAllRoundAudios])
 
   // 動態計算的節奏設定
-  // waitTime = round 音樂時長 - 節拍跳動時間
-  const beatDuration = RHYTHM_SETTINGS.TOTAL_BEATS * RHYTHM_SETTINGS.BEAT_INTERVAL
-  const dynamicWaitTime = actualRoundDuration - beatDuration
+  // 每組流程：revealDelay + 揭示 8 拍 + 跳動 8 拍 = roundDuration
+  // 揭示階段和跳動階段各 8 拍，共 16 拍
+  const totalPhaseBeatCount = RHYTHM_SETTINGS.TOTAL_BEATS * 2
+  const totalBeatsDuration = totalPhaseBeatCount * RHYTHM_SETTINGS.BEAT_INTERVAL
+  // revealDelay = round 音樂時長 - (揭示 8 拍 + 跳動 8 拍)
+  const revealDelay = Math.max(0, actualRoundDuration - totalBeatsDuration)
 
   return {
     stopAllAudio,
@@ -241,7 +244,7 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
     timing: {
       startDuration: actualStartDuration,
       roundDuration: actualRoundDuration,
-      waitTime: dynamicWaitTime,
+      revealDelay: revealDelay,
       beatInterval: RHYTHM_SETTINGS.BEAT_INTERVAL,
       totalBeats: RHYTHM_SETTINGS.TOTAL_BEATS,
     },

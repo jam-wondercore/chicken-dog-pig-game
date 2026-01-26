@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
 import GameReadyScreen from './game/GameReadyScreen'
 import GameIntroScreen from './game/GameIntroScreen'
@@ -25,10 +25,14 @@ function GamePage({ gameState }) {
   // 音樂播放 - 預排程音樂播放，與渲染邏輯分離
   const { stopAllAudio, timing } = useAudioPlayer(gamePhase, currentGroupIndex, resetTrigger, groups.length)
 
+  // 揭示階段的索引（前 8 拍圖片依次出現）
+  const [revealIndex, setRevealIndex] = useState(-1)
+
   // 節奏控制 refs
   const timerRef = useRef(null)
   const beatIndexRef = useRef(-1)
-  const currentPhaseRef = useRef(BEAT_PHASES.WAITING)
+  const revealIndexRef = useRef(-1)
+  const currentPhaseRef = useRef(BEAT_PHASES.REVEALING)
   const lastResetTriggerRef = useRef(resetTrigger)
 
   // 監聽 resetTrigger 變化來重置本地狀態
@@ -44,7 +48,9 @@ function GamePage({ gameState }) {
 
       // 重置所有本地狀態
       beatIndexRef.current = -1
-      currentPhaseRef.current = BEAT_PHASES.WAITING
+      revealIndexRef.current = -1
+      setRevealIndex(-1)
+      currentPhaseRef.current = BEAT_PHASES.REVEALING
     }
   }, [resetTrigger])
 
@@ -75,13 +81,12 @@ function GamePage({ gameState }) {
       clearTimeout(timerRef.current)
     }
 
-    // 單次節拍函數
+    // 單次節拍函數（跳動階段）
     const executeBeat = () => {
       const currentBeat = beatIndexRef.current
 
       if (currentBeat < timing.totalBeats - 1) {
         // 還有下一拍
-        currentPhaseRef.current = BEAT_PHASES.BEATING
         beatIndexRef.current = currentBeat + 1
         setCurrentBeatIndex(beatIndexRef.current)
 
@@ -94,18 +99,44 @@ function GamePage({ gameState }) {
       }
     }
 
-    // 等待階段
-    const startWaiting = () => {
-      currentPhaseRef.current = BEAT_PHASES.WAITING
+    // 單次揭示函數（揭示階段）
+    const executeReveal = () => {
+      const currentReveal = revealIndexRef.current
+
+      if (currentReveal < timing.totalBeats - 1) {
+        // 還有下一張要揭示
+        revealIndexRef.current = currentReveal + 1
+        setRevealIndex(revealIndexRef.current)
+
+        timerRef.current = setTimeout(() => {
+          executeReveal()
+        }, timing.beatInterval)
+      } else {
+        // 揭示完成，進入跳動階段
+        startBeating()
+      }
+    }
+
+    // 揭示階段 - 圖片依次出現
+    const startRevealing = () => {
+      currentPhaseRef.current = BEAT_PHASES.REVEALING
+      revealIndexRef.current = -1
+      setRevealIndex(-1)
       beatIndexRef.current = -1
       setCurrentBeatIndex(-1)
 
+      // 延遲後開始第一張揭示
       timerRef.current = setTimeout(() => {
-        startBeating()
-      }, timing.waitTime)
+        revealIndexRef.current = 0
+        setRevealIndex(0)
+
+        timerRef.current = setTimeout(() => {
+          executeReveal()
+        }, timing.beatInterval)
+      }, timing.revealDelay)
     }
 
-    // 開始新一組的跳動
+    // 開始跳動階段
     const startBeating = () => {
       currentPhaseRef.current = BEAT_PHASES.BEATING
       beatIndexRef.current = 0
@@ -119,7 +150,9 @@ function GamePage({ gameState }) {
     // 完成當前組
     const finishCurrentGroup = () => {
       if (currentGroupIndex < groups.length - 1) {
-        // 切換到下一組
+        // 切換到下一組，重置揭示狀態
+        revealIndexRef.current = -1
+        setRevealIndex(-1)
         setCurrentGroupIndex(prev => prev + 1)
       } else {
         // 所有組完成
@@ -127,8 +160,8 @@ function GamePage({ gameState }) {
       }
     }
 
-    // 開始等待階段
-    startWaiting()
+    // 開始揭示階段
+    startRevealing()
 
     // 清理函數
     return () => {
@@ -137,7 +170,7 @@ function GamePage({ gameState }) {
         timerRef.current = null
       }
     }
-  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase, timing.totalBeats, timing.beatInterval, timing.waitTime])
+  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase, timing.totalBeats, timing.beatInterval, timing.revealDelay])
 
   // 處理重新播放
   const handleReplay = () => {
@@ -172,6 +205,7 @@ function GamePage({ gameState }) {
           <ImageGrid
             images={currentGroupImages}
             activeIndex={currentBeatIndex}
+            revealIndex={revealIndex}
             mode={GRID_MODES.GAME}
           />
         )
