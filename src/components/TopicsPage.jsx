@@ -11,6 +11,8 @@ function TopicsPage({ gameState }) {
     batchAddImagesToTopic,
     deleteImageFromTopic,
     getTopicImages,
+    reorderTopics,
+    reorderTopicImages,
   } = gameState
 
   const fileInputRef = useRef(null)
@@ -19,6 +21,14 @@ function TopicsPage({ gameState }) {
   const [newTopicName, setNewTopicName] = useState('')
   const [editingTopicId, setEditingTopicId] = useState(null)
   const [editingName, setEditingName] = useState('')
+
+  // 主題拖拽狀態
+  const [draggedTopicIndex, setDraggedTopicIndex] = useState(null)
+  const [topicDropPosition, setTopicDropPosition] = useState(null) // 插入位置 (0 到 topics.length)
+
+  // 圖片拖拽狀態
+  const [draggedImageInfo, setDraggedImageInfo] = useState(null) // { topicId, imageIndex }
+  const [imageDropPosition, setImageDropPosition] = useState(null) // 插入位置
 
   const handleAddTopic = () => {
     if (newTopicName.trim()) {
@@ -70,6 +80,92 @@ function TopicsPage({ gameState }) {
       batchAddImagesToTopic(uploadTopicIdRef.current, files)
     }
     e.target.value = ''
+  }
+
+  // ========== 主題拖拽處理 ==========
+  const handleTopicDragStart = (e, index) => {
+    setDraggedTopicIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleTopicDragEnd = () => {
+    setDraggedTopicIndex(null)
+    setTopicDropPosition(null)
+  }
+
+  const handleTopicDragOver = (e, index) => {
+    e.preventDefault()
+    if (draggedTopicIndex === null) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relativeY = (e.clientY - rect.top) / rect.height
+    // 上半部觸發前方插入，下半部觸發後方插入
+    let pos = relativeY < 0.5 ? index : index + 1
+    // 避免無效的位置（拖到自己的前後）
+    if (pos !== draggedTopicIndex && pos !== draggedTopicIndex + 1) {
+      setTopicDropPosition(pos)
+    } else {
+      setTopicDropPosition(null)
+    }
+  }
+
+  const handleTopicDragLeave = () => {
+    setTopicDropPosition(null)
+  }
+
+  const handleTopicDrop = (e) => {
+    e.preventDefault()
+    if (topicDropPosition !== null && draggedTopicIndex !== null) {
+      const targetIndex = topicDropPosition > draggedTopicIndex ? topicDropPosition - 1 : topicDropPosition
+      reorderTopics(draggedTopicIndex, targetIndex)
+    }
+    setDraggedTopicIndex(null)
+    setTopicDropPosition(null)
+  }
+
+  // ========== 圖片拖拽處理 ==========
+  const handleImageDragStart = (e, topicId, imageIndex) => {
+    setDraggedImageInfo({ topicId, imageIndex })
+    e.dataTransfer.effectAllowed = 'move'
+    e.stopPropagation()
+  }
+
+  const handleImageDragEnd = () => {
+    setDraggedImageInfo(null)
+    setImageDropPosition(null)
+  }
+
+  const handleImageDragOver = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedImageInfo === null) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relativeX = (e.clientX - rect.left) / rect.width
+    // 左半部觸發前方插入，右半部觸發後方插入
+    let pos = relativeX < 0.5 ? index : index + 1
+    // 避免無效的位置
+    if (pos !== draggedImageInfo.imageIndex && pos !== draggedImageInfo.imageIndex + 1) {
+      setImageDropPosition(pos)
+    } else {
+      setImageDropPosition(null)
+    }
+  }
+
+  const handleImageDragLeave = (e) => {
+    e.stopPropagation()
+    setImageDropPosition(null)
+  }
+
+  const handleImageDrop = (e, topicId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (imageDropPosition !== null && draggedImageInfo !== null && draggedImageInfo.topicId === topicId) {
+      const targetIndex = imageDropPosition > draggedImageInfo.imageIndex ? imageDropPosition - 1 : imageDropPosition
+      reorderTopicImages(topicId, draggedImageInfo.imageIndex, targetIndex)
+    }
+    setDraggedImageInfo(null)
+    setImageDropPosition(null)
   }
 
   return (
@@ -140,20 +236,35 @@ function TopicsPage({ gameState }) {
           <p className="text-xs sm:text-sm text-gray-400">點擊「+ 新增主題」開始建立主題庫</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {topics.map((topic) => {
+        <div className="flex flex-col gap-1">
+          {topics.map((topic, topicIndex) => {
             const isExpanded = currentTopicId === topic.id
             const isEditing = editingTopicId === topic.id
+            const isDragging = draggedTopicIndex === topicIndex
+            const showDropBefore = topicDropPosition === topicIndex
+            const showDropAfter = topicDropPosition === topicIndex + 1
 
             return (
-              <div
-                key={topic.id}
-                className={`rounded-2xl overflow-hidden transition-all duration-300 ${
-                  isExpanded
-                    ? 'glass-card-elevated ring-2 ring-indigo-400/50'
-                    : 'glass-card hover:shadow-lg'
-                }`}
-              >
+              <div key={topic.id} className="relative">
+                {/* 上方插入指示線 */}
+                <div
+                  className={`absolute left-4 right-4 top-0 -translate-y-1/2 h-1 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedTopicIndex !== null && showDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <div
+                  draggable={!isEditing}
+                  onDragStart={(e) => handleTopicDragStart(e, topicIndex)}
+                  onDragOver={(e) => handleTopicDragOver(e, topicIndex)}
+                  onDragLeave={handleTopicDragLeave}
+                  onDrop={handleTopicDrop}
+                  onDragEnd={handleTopicDragEnd}
+                  className={`rounded-2xl overflow-hidden transition-all duration-300 my-1 ${
+                    isExpanded
+                      ? 'glass-card-elevated ring-2 ring-indigo-400/50'
+                      : 'glass-card hover:shadow-lg'
+                  } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                >
                 {/* Topic Header */}
                 <div
                   onClick={() => !isEditing && handleToggleTopic(topic.id)}
@@ -164,6 +275,17 @@ function TopicsPage({ gameState }) {
                   }`}
                 >
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    {/* 拖拽把手 */}
+                    <div
+                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center cursor-grab active:cursor-grabbing ${
+                        isExpanded ? 'text-white/60' : 'text-gray-400'
+                      }`}
+                      title="拖拽排序"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
+                      </svg>
+                    </div>
                     {/* 展開/收合圖示 */}
                     <div
                       className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
@@ -258,40 +380,77 @@ function TopicsPage({ gameState }) {
                         <p className="text-xs sm:text-sm text-gray-400">此主題尚未有圖片</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-                        {getTopicImages(topic.id).map((image, index) => (
-                          <div
-                            key={`${topic.id}-${index}`}
-                            className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer border-2 border-gray-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-                          >
-                            {image ? (
-                              <img
-                                src={image}
-                                alt={`圖片 ${index + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-1">
+                        {getTopicImages(topic.id).map((image, index) => {
+                          const isImageDragging = draggedImageInfo?.topicId === topic.id && draggedImageInfo?.imageIndex === index
+                          const showImageDropBefore = draggedImageInfo?.topicId === topic.id && imageDropPosition === index
+                          const showImageDropAfter = draggedImageInfo?.topicId === topic.id && imageDropPosition === index + 1
+
+                          return (
+                            <div key={`${topic.id}-${index}`} className="relative p-1">
+                              {/* 左側插入指示線 */}
+                              <div
+                                className={`absolute left-0 top-2 bottom-2 w-1 rounded-full z-10 transition-opacity duration-150 ${
+                                  draggedImageInfo !== null && showImageDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                                }`}
                               />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">載入中</span>
+                              <div
+                                draggable
+                                onDragStart={(e) => handleImageDragStart(e, topic.id, index)}
+                                onDragOver={(e) => handleImageDragOver(e, index)}
+                                onDragLeave={handleImageDragLeave}
+                                onDrop={(e) => handleImageDrop(e, topic.id)}
+                                onDragEnd={handleImageDragEnd}
+                                className={`relative aspect-square rounded-xl overflow-hidden group cursor-grab active:cursor-grabbing border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+                                  isImageDragging
+                                    ? 'opacity-50 scale-95 border-gray-300'
+                                    : 'border-gray-100 hover:border-indigo-300'
+                                }`}
+                              >
+                                {image ? (
+                                  <img
+                                    src={image}
+                                    alt={`圖片 ${index + 1}`}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                    draggable={false}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">載入中</span>
+                                  </div>
+                                )}
+                                {/* 刪除按鈕 */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    e.preventDefault()
+                                    deleteImageFromTopic(topic.id, index)
+                                  }}
+                                  className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-500 transition-all duration-200 text-xs"
+                                >
+                                  ✕
+                                </button>
                               </div>
-                            )}
-                            {/* 刪除按鈕 */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                e.preventDefault()
-                                deleteImageFromTopic(topic.id, index)
-                              }}
-                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-500 transition-all duration-200 text-xs"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                              {/* 右側插入指示線 */}
+                              <div
+                                className={`absolute right-0 top-2 bottom-2 w-1 rounded-full z-10 transition-opacity duration-150 ${
+                                  draggedImageInfo !== null && showImageDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                                }`}
+                              />
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
                 )}
+                </div>
+                {/* 下方插入指示線 */}
+                <div
+                  className={`absolute left-4 right-4 bottom-0 translate-y-1/2 h-1 rounded-full z-10 transition-opacity duration-150 ${
+                    draggedTopicIndex !== null && showDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                  }`}
+                />
               </div>
             )
           })}
