@@ -1,10 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { AUDIO_FILES, GAME_PHASES, RHYTHM_SETTINGS } from '../constants'
 
-// 備用時長（當音樂無法載入時使用）
-const START_DURATION_FALLBACK = 3100
-const ROUND_DURATION_FALLBACK = 5340
-
 // 重疊時間（提前啟動下一首的毫秒數）
 const OVERLAP_MS = 0
 
@@ -33,8 +29,8 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
   const lastPhaseRef = useRef(null)
 
   // 取得實際使用的音樂時長
-  const actualStartDuration = startDuration || START_DURATION_FALLBACK
-  const actualRoundDuration = roundDuration || ROUND_DURATION_FALLBACK
+  const actualStartDuration = startDuration
+  const actualRoundDuration = roundDuration
 
   // 初始化並預載入音樂，同時讀取時長
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import ImageGrid from './ImageGrid'
 import GameReadyScreen from './game/GameReadyScreen'
 import GameIntroScreen from './game/GameIntroScreen'
@@ -34,6 +34,45 @@ function GamePage({ gameState }) {
   const revealIndexRef = useRef(-1)
   const currentPhaseRef = useRef(BEAT_PHASES.REVEALING)
   const lastResetTriggerRef = useRef(resetTrigger)
+  // 記錄遊戲開始時間（用於 log）
+  const gameStartTimeRef = useRef(null)
+
+  // 計算預期時間的輔助函數
+  const getExpectedTime = useCallback((roundIndex, phase, beatIndex = 0) => {
+    // 音樂的預期時間計算（與 useAudioPlayer 同步）
+    // Round N 開始時間 = startDuration + (roundIndex * roundDuration)
+    const roundStartTime = timing.startDuration + (roundIndex * timing.roundDuration)
+
+    switch (phase) {
+      case 'round_start':
+        return roundStartTime
+      case 'reveal':
+        // Reveal N 時間 = roundStartTime + revealDelay + (beatIndex * beatInterval)
+        return roundStartTime + timing.revealDelay + (beatIndex * timing.beatInterval)
+      case 'beat':
+        // Beat N 時間 = roundStartTime + revealDelay + (8 * beatInterval) + (beatIndex * beatInterval)
+        return roundStartTime + timing.revealDelay + (timing.totalBeats * timing.beatInterval) + (beatIndex * timing.beatInterval)
+      case 'round_end':
+        // Round 結束 = 下一個 round 開始時間
+        return roundStartTime + timing.roundDuration
+      default:
+        return 0
+    }
+  }, [timing.startDuration, timing.roundDuration, timing.revealDelay, timing.beatInterval, timing.totalBeats])
+
+  // log 輔助函數：顯示預期時間、實際時間、誤差
+  const logTiming = useCallback((label, expectedTime) => {
+    const actual = performance.now() - gameStartTimeRef.current
+    const diff = actual - expectedTime
+    const diffSign = diff >= 0 ? '+' : ''
+    console.log(`[Animation] ${label} | 預期: ${expectedTime.toFixed(0)}ms, 實際: ${actual.toFixed(0)}ms, 誤差: ${diffSign}${diff.toFixed(1)}ms`)
+  }, [])
+
+  // 計算下一個事件應該延遲多少時間（使用絕對時間校正）
+  const getDelayUntil = useCallback((expectedTime) => {
+    const elapsed = performance.now() - gameStartTimeRef.current
+    return Math.max(0, expectedTime - elapsed)
+  }, [])
 
   // 監聽 resetTrigger 變化來重置本地狀態
   useEffect(() => {
@@ -58,12 +97,17 @@ function GamePage({ gameState }) {
   useEffect(() => {
     if (gamePhase !== GAME_PHASES.READY) return
 
+    // 記錄遊戲開始時間
+    gameStartTimeRef.current = performance.now()
+    console.log(`[Animation] READY 階段開始，startDuration: ${timing.startDuration}ms, roundDuration: ${timing.roundDuration}ms`)
+
     const introTimer = setTimeout(() => {
+      logTiming('READY -> PLAYING', timing.startDuration)
       enterPlayingPhase()
     }, timing.startDuration)
 
     return () => clearTimeout(introTimer)
-  }, [gamePhase, enterPlayingPhase, timing.startDuration])
+  }, [gamePhase, enterPlayingPhase, timing.startDuration, timing.roundDuration, logTiming])
 
   // 核心節拍控制器 - 遊戲進行中的節奏控制
   useEffect(() => {
@@ -89,10 +133,14 @@ function GamePage({ gameState }) {
         // 還有下一拍
         beatIndexRef.current = currentBeat + 1
         setCurrentBeatIndex(beatIndexRef.current)
+        const expectedTime = getExpectedTime(currentGroupIndex, 'beat', beatIndexRef.current)
+        logTiming(`Round ${currentGroupIndex + 1} - Beat ${beatIndexRef.current}`, expectedTime)
 
+        // 使用絕對時間計算下一拍的延遲
+        const nextExpectedTime = getExpectedTime(currentGroupIndex, 'beat', beatIndexRef.current + 1)
         timerRef.current = setTimeout(() => {
           executeBeat()
-        }, timing.beatInterval)
+        }, getDelayUntil(nextExpectedTime))
       } else {
         // 當前組完成
         finishCurrentGroup()
@@ -107,10 +155,14 @@ function GamePage({ gameState }) {
         // 還有下一張要揭示
         revealIndexRef.current = currentReveal + 1
         setRevealIndex(revealIndexRef.current)
+        const expectedTime = getExpectedTime(currentGroupIndex, 'reveal', revealIndexRef.current)
+        logTiming(`Round ${currentGroupIndex + 1} - Reveal ${revealIndexRef.current}`, expectedTime)
 
+        // 使用絕對時間計算下一張的延遲
+        const nextExpectedTime = getExpectedTime(currentGroupIndex, 'reveal', revealIndexRef.current + 1)
         timerRef.current = setTimeout(() => {
           executeReveal()
-        }, timing.beatInterval)
+        }, getDelayUntil(nextExpectedTime))
       } else {
         // 揭示完成，進入跳動階段
         startBeating()
@@ -125,15 +177,21 @@ function GamePage({ gameState }) {
       beatIndexRef.current = -1
       setCurrentBeatIndex(-1)
 
-      // 延遲後開始第一張揭示
+      logTiming(`Round ${currentGroupIndex + 1} - 開始`, getExpectedTime(currentGroupIndex, 'round_start'))
+
+      // 使用絕對時間計算第一張揭示的延遲
+      const reveal0ExpectedTime = getExpectedTime(currentGroupIndex, 'reveal', 0)
       timerRef.current = setTimeout(() => {
         revealIndexRef.current = 0
         setRevealIndex(0)
+        logTiming(`Round ${currentGroupIndex + 1} - Reveal 0`, reveal0ExpectedTime)
 
+        // 使用絕對時間計算下一張的延遲
+        const reveal1ExpectedTime = getExpectedTime(currentGroupIndex, 'reveal', 1)
         timerRef.current = setTimeout(() => {
           executeReveal()
-        }, timing.beatInterval)
-      }, timing.revealDelay)
+        }, getDelayUntil(reveal1ExpectedTime))
+      }, getDelayUntil(reveal0ExpectedTime))
     }
 
     // 開始跳動階段
@@ -141,14 +199,19 @@ function GamePage({ gameState }) {
       currentPhaseRef.current = BEAT_PHASES.BEATING
       beatIndexRef.current = 0
       setCurrentBeatIndex(0)
+      const beat0ExpectedTime = getExpectedTime(currentGroupIndex, 'beat', 0)
+      logTiming(`Round ${currentGroupIndex + 1} - Beat 0`, beat0ExpectedTime)
 
+      // 使用絕對時間計算下一拍的延遲
+      const beat1ExpectedTime = getExpectedTime(currentGroupIndex, 'beat', 1)
       timerRef.current = setTimeout(() => {
         executeBeat()
-      }, timing.beatInterval)
+      }, getDelayUntil(beat1ExpectedTime))
     }
 
     // 完成當前組
     const finishCurrentGroup = () => {
+      logTiming(`Round ${currentGroupIndex + 1} - 結束`, getExpectedTime(currentGroupIndex, 'round_end'))
       if (currentGroupIndex < groups.length - 1) {
         // 切換到下一組，重置揭示狀態
         revealIndexRef.current = -1
@@ -170,7 +233,7 @@ function GamePage({ gameState }) {
         timerRef.current = null
       }
     }
-  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase, timing.totalBeats, timing.beatInterval, timing.revealDelay])
+  }, [gamePhase, currentGroupIndex, groups.length, setCurrentBeatIndex, setCurrentGroupIndex, enterEndedPhase, timing.totalBeats, timing.beatInterval, timing.revealDelay, logTiming, getExpectedTime, getDelayUntil])
 
   // 處理重新播放
   const handleReplay = () => {
