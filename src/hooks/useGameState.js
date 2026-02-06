@@ -367,6 +367,27 @@ function useGameState() {
     setTimeout(() => runGarbageCollection(), 100)
   }, [runGarbageCollection])
 
+  const reorderTopics = useCallback((fromIndex, toIndex) => {
+    setTopics(prev => {
+      const newTopics = [...prev]
+      const [removed] = newTopics.splice(fromIndex, 1)
+      newTopics.splice(toIndex, 0, removed)
+      return newTopics
+    })
+  }, [])
+
+  const reorderTopicImages = useCallback((topicId, fromIndex, toIndex) => {
+    setTopics(prev => prev.map(topic => {
+      if (topic.id === topicId) {
+        const newImageIds = [...(topic.imageIds || [])]
+        const [removed] = newImageIds.splice(fromIndex, 1)
+        newImageIds.splice(toIndex, 0, removed)
+        return { ...topic, imageIds: newImageIds }
+      }
+      return topic
+    }))
+  }, [])
+
   const importFromTopic = useCallback((groupId, topicId) => {
     const topic = topics.find(t => t.id === topicId)
     if (!topic || !topic.imageIds || topic.imageIds.length === 0) {
@@ -495,6 +516,8 @@ function useGameState() {
     addImageToTopic,
     batchAddImagesToTopic,
     deleteImageFromTopic,
+    reorderTopics,
+    reorderTopicImages,
     importFromTopic,
 
     // 遊戲控制
