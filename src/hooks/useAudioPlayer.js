@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { AUDIO_FILES, GAME_PHASES, RHYTHM_SETTINGS } from '../constants'
 
 // 重疊時間（提前啟動下一首的毫秒數）
@@ -229,8 +229,7 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
   const { BEAT_INTERVAL, TOTAL_BEATS } = RHYTHM_SETTINGS
   const revealDelay = Math.max(0, actualRoundDuration - TOTAL_BEATS * 2 * BEAT_INTERVAL)
 
-  // 計算某個事件的預期絕對時間（相對於遊戲開始）
-  const getExpectedTime = (roundIndex, phase, beatIndex = 0) => {
+  const getExpectedTime = useCallback((roundIndex, phase, beatIndex = 0) => {
     const roundStartTime = actualStartDuration + (roundIndex * actualRoundDuration)
     switch (phase) {
       case 'round_start': return roundStartTime
@@ -239,19 +238,21 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
       case 'round_end':   return roundStartTime + actualRoundDuration
       default:            return 0
     }
-  }
+  }, [actualStartDuration, actualRoundDuration, revealDelay, BEAT_INTERVAL, TOTAL_BEATS])
+
+  const timing = useMemo(() => ({
+    startDuration: actualStartDuration,
+    roundDuration: actualRoundDuration,
+    revealDelay,
+    beatInterval: BEAT_INTERVAL,
+    totalBeats: TOTAL_BEATS,
+    getExpectedTime,
+  }), [actualStartDuration, actualRoundDuration, revealDelay, BEAT_INTERVAL, TOTAL_BEATS, getExpectedTime])
 
   return {
     stopAllAudio,
     resetAudioState,
-    timing: {
-      startDuration: actualStartDuration,
-      roundDuration: actualRoundDuration,
-      revealDelay,
-      beatInterval: BEAT_INTERVAL,
-      totalBeats: TOTAL_BEATS,
-      getExpectedTime,
-    },
+    timing,
   }
 }
 
