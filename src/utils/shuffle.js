@@ -26,6 +26,7 @@ export const randomPick = (array, count) => {
 
 /**
  * 從陣列中隨機選取元素，如果不足則重複選取
+ * 每輪重新打亂，確保重複的元素順序也是隨機的
  * @param {Array} array - 來源陣列
  * @param {number} count - 需要的數量
  * @returns {Array} 選取的元素陣列（長度為 count）
@@ -33,12 +34,11 @@ export const randomPick = (array, count) => {
 export const randomPickWithRepeat = (array, count) => {
   if (array.length === 0) return []
 
-  const shuffled = fisherYatesShuffle(array)
   const result = []
-
-  for (let i = 0; i < count; i++) {
-    result.push(shuffled[i % shuffled.length])
+  while (result.length < count) {
+    const shuffled = fisherYatesShuffle(array)
+    result.push(...shuffled)
   }
 
-  return result
+  return result.slice(0, count)
 }
