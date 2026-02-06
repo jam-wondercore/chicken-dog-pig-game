@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
+import useDragAndDrop from '../hooks/useDragAndDrop'
 
 function TopicsPage({ gameState }) {
   const {
@@ -22,13 +23,17 @@ function TopicsPage({ gameState }) {
   const [editingTopicId, setEditingTopicId] = useState(null)
   const [editingName, setEditingName] = useState('')
 
-  // 主題拖拽狀態
-  const [draggedTopicIndex, setDraggedTopicIndex] = useState(null)
-  const [topicDropPosition, setTopicDropPosition] = useState(null) // 插入位置 (0 到 topics.length)
+  // 主題拖拽（垂直排列）
+  const topicDrag = useDragAndDrop({ onReorder: reorderTopics })
 
-  // 圖片拖拽狀態
-  const [draggedImageInfo, setDraggedImageInfo] = useState(null) // { topicId, imageIndex }
-  const [imageDropPosition, setImageDropPosition] = useState(null) // 插入位置
+  // 圖片拖拽（水平排列，需要追蹤 topicId）
+  const [activeImageTopicId, setActiveImageTopicId] = useState(null)
+  const handleImageReorder = useCallback((fromIndex, toIndex) => {
+    if (activeImageTopicId) {
+      reorderTopicImages(activeImageTopicId, fromIndex, toIndex)
+    }
+  }, [activeImageTopicId, reorderTopicImages])
+  const imageDrag = useDragAndDrop({ onReorder: handleImageReorder })
 
   const handleAddTopic = () => {
     if (newTopicName.trim()) {
@@ -80,92 +85,6 @@ function TopicsPage({ gameState }) {
       batchAddImagesToTopic(uploadTopicIdRef.current, files)
     }
     e.target.value = ''
-  }
-
-  // ========== 主題拖拽處理 ==========
-  const handleTopicDragStart = (e, index) => {
-    setDraggedTopicIndex(index)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  const handleTopicDragEnd = () => {
-    setDraggedTopicIndex(null)
-    setTopicDropPosition(null)
-  }
-
-  const handleTopicDragOver = (e, index) => {
-    e.preventDefault()
-    if (draggedTopicIndex === null) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const relativeY = (e.clientY - rect.top) / rect.height
-    // 上半部觸發前方插入，下半部觸發後方插入
-    let pos = relativeY < 0.5 ? index : index + 1
-    // 避免無效的位置（拖到自己的前後）
-    if (pos !== draggedTopicIndex && pos !== draggedTopicIndex + 1) {
-      setTopicDropPosition(pos)
-    } else {
-      setTopicDropPosition(null)
-    }
-  }
-
-  const handleTopicDragLeave = () => {
-    setTopicDropPosition(null)
-  }
-
-  const handleTopicDrop = (e) => {
-    e.preventDefault()
-    if (topicDropPosition !== null && draggedTopicIndex !== null) {
-      const targetIndex = topicDropPosition > draggedTopicIndex ? topicDropPosition - 1 : topicDropPosition
-      reorderTopics(draggedTopicIndex, targetIndex)
-    }
-    setDraggedTopicIndex(null)
-    setTopicDropPosition(null)
-  }
-
-  // ========== 圖片拖拽處理 ==========
-  const handleImageDragStart = (e, topicId, imageIndex) => {
-    setDraggedImageInfo({ topicId, imageIndex })
-    e.dataTransfer.effectAllowed = 'move'
-    e.stopPropagation()
-  }
-
-  const handleImageDragEnd = () => {
-    setDraggedImageInfo(null)
-    setImageDropPosition(null)
-  }
-
-  const handleImageDragOver = (e, index) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (draggedImageInfo === null) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const relativeX = (e.clientX - rect.left) / rect.width
-    // 左半部觸發前方插入，右半部觸發後方插入
-    let pos = relativeX < 0.5 ? index : index + 1
-    // 避免無效的位置
-    if (pos !== draggedImageInfo.imageIndex && pos !== draggedImageInfo.imageIndex + 1) {
-      setImageDropPosition(pos)
-    } else {
-      setImageDropPosition(null)
-    }
-  }
-
-  const handleImageDragLeave = (e) => {
-    e.stopPropagation()
-    setImageDropPosition(null)
-  }
-
-  const handleImageDrop = (e, topicId) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (imageDropPosition !== null && draggedImageInfo !== null && draggedImageInfo.topicId === topicId) {
-      const targetIndex = imageDropPosition > draggedImageInfo.imageIndex ? imageDropPosition - 1 : imageDropPosition
-      reorderTopicImages(topicId, draggedImageInfo.imageIndex, targetIndex)
-    }
-    setDraggedImageInfo(null)
-    setImageDropPosition(null)
   }
 
   return (
@@ -240,25 +159,18 @@ function TopicsPage({ gameState }) {
           {topics.map((topic, topicIndex) => {
             const isExpanded = currentTopicId === topic.id
             const isEditing = editingTopicId === topic.id
-            const isDragging = draggedTopicIndex === topicIndex
-            const showDropBefore = topicDropPosition === topicIndex
-            const showDropAfter = topicDropPosition === topicIndex + 1
+            const isDragging = topicDrag.draggedIndex === topicIndex
 
             return (
               <div key={topic.id} className="relative">
                 {/* 上方插入指示線 */}
                 <div
                   className={`absolute left-4 right-4 top-0 -translate-y-1/2 h-1 rounded-full z-10 transition-opacity duration-150 ${
-                    draggedTopicIndex !== null && showDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                    topicDrag.shouldShowDropIndicator(topicIndex) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                   }`}
                 />
                 <div
-                  draggable={!isEditing}
-                  onDragStart={(e) => handleTopicDragStart(e, topicIndex)}
-                  onDragOver={(e) => handleTopicDragOver(e, topicIndex)}
-                  onDragLeave={handleTopicDragLeave}
-                  onDrop={handleTopicDrop}
-                  onDragEnd={handleTopicDragEnd}
+                  {...(isEditing ? {} : topicDrag.getDragItemPropsVertical(topicIndex))}
                   className={`rounded-2xl overflow-hidden transition-all duration-300 my-1 ${
                     isExpanded
                       ? 'glass-card-elevated ring-2 ring-indigo-400/50'
@@ -382,25 +294,28 @@ function TopicsPage({ gameState }) {
                     ) : (
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-1">
                         {getTopicImages(topic.id).map((image, index) => {
-                          const isImageDragging = draggedImageInfo?.topicId === topic.id && draggedImageInfo?.imageIndex === index
-                          const showImageDropBefore = draggedImageInfo?.topicId === topic.id && imageDropPosition === index
-                          const showImageDropAfter = draggedImageInfo?.topicId === topic.id && imageDropPosition === index + 1
+                          const isImageDragging = activeImageTopicId === topic.id && imageDrag.draggedIndex === index
+                          const imageProps = imageDrag.getDragItemProps(index)
 
                           return (
                             <div key={`${topic.id}-${index}`} className="relative p-1">
                               {/* 左側插入指示線 */}
                               <div
                                 className={`absolute left-0 top-2 bottom-2 w-1 rounded-full z-10 transition-opacity duration-150 ${
-                                  draggedImageInfo !== null && showImageDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                                  activeImageTopicId === topic.id && imageDrag.shouldShowDropIndicator(index) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                                 }`}
                               />
                               <div
                                 draggable
-                                onDragStart={(e) => handleImageDragStart(e, topic.id, index)}
-                                onDragOver={(e) => handleImageDragOver(e, index)}
-                                onDragLeave={handleImageDragLeave}
-                                onDrop={(e) => handleImageDrop(e, topic.id)}
-                                onDragEnd={handleImageDragEnd}
+                                onDragStart={(e) => {
+                                  e.stopPropagation()
+                                  setActiveImageTopicId(topic.id)
+                                  imageProps.onDragStart(e)
+                                }}
+                                onDragOver={(e) => { e.stopPropagation(); imageProps.onDragOver(e) }}
+                                onDragLeave={(e) => { e.stopPropagation(); imageProps.onDragLeave(e) }}
+                                onDrop={(e) => { e.stopPropagation(); imageProps.onDrop(e) }}
+                                onDragEnd={imageProps.onDragEnd}
                                 className={`relative aspect-square rounded-xl overflow-hidden group cursor-grab active:cursor-grabbing border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
                                   isImageDragging
                                     ? 'opacity-50 scale-95 border-gray-300'
@@ -434,7 +349,7 @@ function TopicsPage({ gameState }) {
                               {/* 右側插入指示線 */}
                               <div
                                 className={`absolute right-0 top-2 bottom-2 w-1 rounded-full z-10 transition-opacity duration-150 ${
-                                  draggedImageInfo !== null && showImageDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                                  activeImageTopicId === topic.id && imageDrag.shouldShowDropIndicator(index + 1) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                                 }`}
                               />
                             </div>
@@ -448,7 +363,7 @@ function TopicsPage({ gameState }) {
                 {/* 下方插入指示線 */}
                 <div
                   className={`absolute left-4 right-4 bottom-0 translate-y-1/2 h-1 rounded-full z-10 transition-opacity duration-150 ${
-                    draggedTopicIndex !== null && showDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                    topicDrag.shouldShowDropIndicator(topicIndex + 1) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                   }`}
                 />
               </div>

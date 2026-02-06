@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { AUDIO_FILES, GAME_PHASES, RHYTHM_SETTINGS } from '../constants'
 
 // 重疊時間（提前啟動下一首的毫秒數）
@@ -225,25 +225,34 @@ function useAudioPlayer(gamePhase, currentGroupIndex = 0, resetTrigger = 0, tota
     }
   }, [clearAllScheduledTimers, stopAllRoundAudios])
 
-  // 動態計算的節奏設定
-  // 每組流程：revealDelay + 揭示 8 拍 + 跳動 8 拍 = roundDuration
-  // 揭示階段和跳動階段各 8 拍，共 16 拍
-  const totalPhaseBeatCount = RHYTHM_SETTINGS.TOTAL_BEATS * 2
-  const totalBeatsDuration = totalPhaseBeatCount * RHYTHM_SETTINGS.BEAT_INTERVAL
-  // revealDelay = round 音樂時長 - (揭示 8 拍 + 跳動 8 拍)
-  const revealDelay = Math.max(0, actualRoundDuration - totalBeatsDuration)
+  // revealDelay = round 音樂時長 - (揭示拍 + 跳動拍)
+  const { BEAT_INTERVAL, TOTAL_BEATS } = RHYTHM_SETTINGS
+  const revealDelay = Math.max(0, actualRoundDuration - TOTAL_BEATS * 2 * BEAT_INTERVAL)
+
+  const getExpectedTime = useCallback((roundIndex, phase, beatIndex = 0) => {
+    const roundStartTime = actualStartDuration + (roundIndex * actualRoundDuration)
+    switch (phase) {
+      case 'round_start': return roundStartTime
+      case 'reveal':      return roundStartTime + revealDelay + (beatIndex * BEAT_INTERVAL)
+      case 'beat':        return roundStartTime + revealDelay + (TOTAL_BEATS * BEAT_INTERVAL) + (beatIndex * BEAT_INTERVAL)
+      case 'round_end':   return roundStartTime + actualRoundDuration
+      default:            return 0
+    }
+  }, [actualStartDuration, actualRoundDuration, revealDelay, BEAT_INTERVAL, TOTAL_BEATS])
+
+  const timing = useMemo(() => ({
+    startDuration: actualStartDuration,
+    roundDuration: actualRoundDuration,
+    revealDelay,
+    beatInterval: BEAT_INTERVAL,
+    totalBeats: TOTAL_BEATS,
+    getExpectedTime,
+  }), [actualStartDuration, actualRoundDuration, revealDelay, BEAT_INTERVAL, TOTAL_BEATS, getExpectedTime])
 
   return {
     stopAllAudio,
     resetAudioState,
-    // 動態時間設定
-    timing: {
-      startDuration: actualStartDuration,
-      roundDuration: actualRoundDuration,
-      revealDelay: revealDelay,
-      beatInterval: RHYTHM_SETTINGS.BEAT_INTERVAL,
-      totalBeats: RHYTHM_SETTINGS.TOTAL_BEATS,
-    },
+    timing,
   }
 }
 

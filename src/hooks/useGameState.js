@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { saveImage, saveImages, getImages, cleanupUnusedImages, validateImageFile } from '../utils/imageStore'
+import { saveImage, saveImages, getImages, cleanupUnusedImages, validateImageFile, readFileAsDataUrl } from '../utils/imageStore'
 import {
   loadTopicsFromStorage,
   saveTopicsToStorage,
@@ -190,12 +190,7 @@ function useGameState() {
         return
       }
 
-      const reader = new FileReader()
-      const dataUrl = await new Promise((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target.result)
-        reader.onerror = reject
-        reader.readAsDataURL(fileOrImageId)
-      })
+      const dataUrl = await readFileAsDataUrl(fileOrImageId)
       imageId = await saveImage(dataUrl)
     } else if (typeof fileOrImageId === 'string' && fileOrImageId.startsWith('data:')) {
       imageId = await saveImage(fileOrImageId)
@@ -321,12 +316,7 @@ function useGameState() {
     let imageId
 
     if (fileOrDataUrl instanceof File) {
-      const reader = new FileReader()
-      const dataUrl = await new Promise((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target.result)
-        reader.onerror = reject
-        reader.readAsDataURL(fileOrDataUrl)
-      })
+      const dataUrl = await readFileAsDataUrl(fileOrDataUrl)
       imageId = await saveImage(dataUrl)
     } else if (typeof fileOrDataUrl === 'string' && fileOrDataUrl.startsWith('data:')) {
       imageId = await saveImage(fileOrDataUrl)
@@ -419,21 +409,23 @@ function useGameState() {
     setResetTrigger(prev => prev + 1)
   }, [])
 
-  const startGame = useCallback(() => {
-    console.log('[useGameState] startGame 被呼叫')
-
-    // 即時從 localStorage 讀取最新的 groups 資料
+  // 共用的遊戲初始化邏輯
+  const initGame = useCallback(() => {
     const latestGroups = loadGroupsFromStorage()
     if (latestGroups && latestGroups.length > 0) {
       setGroups(latestGroups)
     }
-
     setCurrentGroupIndex(0)
     setCurrentBeatIndex(-1)
     setResetTrigger(prev => prev + 1)
     setGamePhase(GAME_PHASES.READY)
-    setCurrentTab(TABS.GAME)
   }, [])
+
+  const startGame = useCallback(() => {
+    console.log('[useGameState] startGame 被呼叫')
+    initGame()
+    setCurrentTab(TABS.GAME)
+  }, [initGame, setCurrentTab])
 
   // 進入遊戲進行階段（前奏結束後呼叫）
   const enterPlayingPhase = useCallback(() => {
@@ -448,21 +440,10 @@ function useGameState() {
   }, [])
 
   // resumeGame 完整重置並從頭開始
-  // 即時從 localStorage 讀取最新資料，確保遊戲使用最新的設定
   const resumeGame = useCallback(() => {
     console.log('[useGameState] resumeGame 被呼叫')
-
-    // 即時從 localStorage 讀取最新的 groups 資料
-    const latestGroups = loadGroupsFromStorage()
-    if (latestGroups && latestGroups.length > 0) {
-      setGroups(latestGroups)
-    }
-
-    setCurrentGroupIndex(0)
-    setCurrentBeatIndex(-1)
-    setResetTrigger(prev => prev + 1)
-    setGamePhase(GAME_PHASES.READY)
-  }, [])
+    initGame()
+  }, [initGame])
 
   const backToGroup = useCallback(() => {
     console.log('[useGameState] backToGroup 被呼叫')

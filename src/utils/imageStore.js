@@ -133,7 +133,7 @@ export const saveImages = async (files, quality = 0.5, maxWidth = 500) => {
 }
 
 // 讀取檔案為 DataURL
-const readFileAsDataUrl = (file) => {
+export const readFileAsDataUrl = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => resolve(e.target.result)
