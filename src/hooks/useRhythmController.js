@@ -76,22 +76,31 @@ function useRhythmController({
 
     const { totalBeats, getExpectedTime } = timing
 
-    // 通用遞迴排程：逐步推進 index，到底後呼叫 onDone
+    const elapsed = () => performance.now() - gameStartTimeRef.current
+    const phaseLabel = (phase) => phase === 'reveal' ? 'Reveal' : 'Beat'
+
+    const logDrift = (phase, idx) => {
+      const expected = getExpectedTime(currentGroupIndex, phase, idx)
+      const drift = elapsed() - expected
+      console.log(`[Animation] Round ${currentGroupIndex + 1} - ${phaseLabel(phase)} ${idx} | 誤差: ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}ms`)
+    }
+
     const runSequence = (phase, indexRef, setter, onDone) => {
       const step = () => {
         const current = indexRef.current
         if (current < totalBeats - 1) {
           indexRef.current = current + 1
           setter(indexRef.current)
+          logDrift(phase, indexRef.current)
           const nextExpected = getExpectedTime(currentGroupIndex, phase, indexRef.current + 1)
           timerRef.current = setTimeout(step, getDelayUntil(nextExpected))
         } else {
           onDone()
         }
       }
-      // 啟動第 0 拍
       indexRef.current = 0
       setter(0)
+      logDrift(phase, 0)
       const beat1Expected = getExpectedTime(currentGroupIndex, phase, 1)
       timerRef.current = setTimeout(step, getDelayUntil(beat1Expected))
     }
@@ -104,6 +113,9 @@ function useRhythmController({
     }
 
     const finishGroup = () => {
+      const expected = getExpectedTime(currentGroupIndex, 'round_end')
+      const drift = elapsed() - expected
+      console.log(`[Animation] Round ${currentGroupIndex + 1} - 結束 | 誤差: ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}ms`)
       if (currentGroupIndex < groupCount - 1) {
         revealIndexRef.current = -1
         setRevealIndex(-1)
