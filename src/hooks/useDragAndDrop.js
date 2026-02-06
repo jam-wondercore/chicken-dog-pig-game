@@ -94,7 +94,23 @@ function useDragAndDrop({ onReorder } = {}) {
   }, [isValidDropPosition])
 
   /**
-   * 取得項目的拖曳屬性
+   * 根據滑鼠位置決定放置位置（上方/下方，用於垂直排列）
+   */
+  const handleItemDragOverVertical = useCallback((e, index) => {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relativeY = (e.clientY - rect.top) / rect.height
+    const pos = relativeY < 0.5 ? index : index + 1
+
+    if (isValidDropPosition(pos)) {
+      setDropPosition(pos)
+    } else {
+      setDropPosition(null)
+    }
+  }, [isValidDropPosition])
+
+  /**
+   * 取得項目的拖曳屬性（水平排列用）
    * @param {number} index - 項目索引
    */
   const getDragItemProps = useCallback((index) => ({
@@ -114,6 +130,27 @@ function useDragAndDrop({ onReorder } = {}) {
     },
   }), [handleDragStart, handleDragEnd, handleItemDragOver, handleDragLeave, dropPosition, draggedIndex, onReorder])
 
+  /**
+   * 取得項目的拖曳屬性（垂直排列用）
+   * @param {number} index - 項目索引
+   */
+  const getDragItemPropsVertical = useCallback((index) => ({
+    draggable: true,
+    onDragStart: (e) => handleDragStart(e, index),
+    onDragEnd: handleDragEnd,
+    onDragOver: (e) => handleItemDragOverVertical(e, index),
+    onDragLeave: handleDragLeave,
+    onDrop: (e) => {
+      e.preventDefault()
+      if (dropPosition !== null && draggedIndex !== null) {
+        const targetIndex = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition
+        onReorder?.(draggedIndex, targetIndex)
+      }
+      setDraggedIndex(null)
+      setDropPosition(null)
+    },
+  }), [handleDragStart, handleDragEnd, handleItemDragOverVertical, handleDragLeave, dropPosition, draggedIndex, onReorder])
+
   return {
     draggedIndex,
     dropPosition,
@@ -124,8 +161,10 @@ function useDragAndDrop({ onReorder } = {}) {
     handleDragLeave,
     handleDrop,
     handleItemDragOver,
+    handleItemDragOverVertical,
     isValidDropPosition,
     getDragItemProps,
+    getDragItemPropsVertical,
     // 判斷是否應該顯示放置指示器
     shouldShowDropIndicator: (position) => draggedIndex !== null && dropPosition === position,
   }

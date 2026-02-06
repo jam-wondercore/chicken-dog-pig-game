@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import ImageGrid from './ImageGrid'
+import useDragAndDrop from '../hooks/useDragAndDrop'
 import { GRID_MODES, MAX_GROUPS } from '../constants'
 
 function GroupPage({ gameState }) {
@@ -20,25 +21,15 @@ function GroupPage({ gameState }) {
   } = gameState
 
   const [showTopicPicker, setShowTopicPicker] = useState(false)
-  const [draggedIndex, setDraggedIndex] = useState(null)
-  const [dropPosition, setDropPosition] = useState(null) // 插入位置 (0 到 groups.length)
 
   const singleInputRef = useRef(null)
   const currentEditIndex = useRef(null)
 
+  const { draggedIndex, shouldShowDropIndicator, getDragItemProps } = useDragAndDrop({
+    onReorder: reorderGroups,
+  })
+
   const currentGroup = groups.find(g => g.id === currentGroupId) || groups[0]
-
-  // 拖曳開始
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  // 拖曳結束
-  const handleDragEnd = () => {
-    setDraggedIndex(null)
-    setDropPosition(null)
-  }
 
   const handleSingleUpload = (index) => {
     currentEditIndex.current = index
@@ -65,47 +56,16 @@ function GroupPage({ gameState }) {
           {groups.map((group, index) => {
             const isActive = currentGroupId === group.id
             const isDragging = draggedIndex === index
-            const showDropBefore = dropPosition === index
-            const showDropAfter = dropPosition === index + 1
             return (
               <div key={group.id} className="relative">
                 {/* 左側插入指示線 */}
                 <div
                   className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
-                    draggedIndex !== null && showDropBefore ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                    shouldShowDropIndicator(index) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                   }`}
                 />
                 <button
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    const relativeX = (e.clientX - rect.left) / rect.width
-                    // 左側 40% 觸發前方插入，右側 40% 觸發後方插入
-                    let pos = null
-                    if (relativeX < 0.4) {
-                      pos = index
-                    } else if (relativeX > 0.6) {
-                      pos = index + 1
-                    }
-                    if (pos !== null && draggedIndex !== null && pos !== draggedIndex && pos !== draggedIndex + 1) {
-                      setDropPosition(pos)
-                    } else {
-                      setDropPosition(null)
-                    }
-                  }}
-                  onDragLeave={() => setDropPosition(null)}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    if (dropPosition !== null && draggedIndex !== null) {
-                      const targetIndex = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition
-                      reorderGroups(draggedIndex, targetIndex)
-                    }
-                    setDraggedIndex(null)
-                    setDropPosition(null)
-                  }}
+                  {...getDragItemProps(index)}
                   onClick={() => setCurrentGroupId(group.id)}
                   className={`relative px-2 py-1.5 sm:px-4 sm:py-2 mx-0.5 sm:mx-1.5 rounded-lg sm:rounded-xl font-semibold text-[10px] sm:text-xs transition-all duration-300 cursor-grab active:cursor-grabbing ${
                     isActive
@@ -121,7 +81,7 @@ function GroupPage({ gameState }) {
                 {/* 右側插入指示線 */}
                 <div
                   className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1 h-8 rounded-full z-10 transition-opacity duration-150 ${
-                    draggedIndex !== null && showDropAfter ? 'bg-indigo-500 opacity-100' : 'opacity-0'
+                    shouldShowDropIndicator(index + 1) ? 'bg-indigo-500 opacity-100' : 'opacity-0'
                   }`}
                 />
               </div>
