@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import ImageGrid from './ImageGrid'
 import GameReadyScreen from './game/GameReadyScreen'
 import GameIntroScreen from './game/GameIntroScreen'
@@ -42,6 +42,22 @@ function GamePage({ gameState }) {
     stopAllAudio()
     backToGroup()
   }, [stopAllAudio, backToGroup])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code !== 'Space') return
+      e.preventDefault()
+
+      if (gamePhase === GAME_PHASES.STOPPED || gamePhase === GAME_PHASES.ENDED) {
+        resumeGame()
+      } else if (gamePhase === GAME_PHASES.READY || gamePhase === GAME_PHASES.PLAYING) {
+        enterEndedPhase()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [gamePhase, resumeGame, enterEndedPhase])
 
   const currentGroupImages = getGroupImages(groups[currentGroupIndex]?.id)
 
